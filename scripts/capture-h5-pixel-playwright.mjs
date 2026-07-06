@@ -9,11 +9,11 @@ const baseUrl = env.DINODOO_QA_URL || "http://localhost:8080";
 const outDir = path.join(root, "qa", "browser");
 
 const states = [
-  { name: "home", hash: "home", screenId: "homeScreen", bodyMode: "home-mode", source: "apps/h5/assets/component-bases/home-component-390.png" },
-  { name: "story", hash: "story", screenId: "playScreen", bodyMode: "pixel-mode", source: "apps/h5/assets/component-bases/story-component-390.png" },
-  { name: "hatch", hash: "hatch", screenId: "hatchScreen", bodyMode: "pixel-mode", source: "apps/h5/assets/component-bases/hatch-component-390.png" },
-  { name: "works", hash: "works", screenId: "galleryScreen", bodyMode: "pixel-mode", source: "apps/h5/assets/component-bases/works-component-390.png" },
-  { name: "parent", hash: "parent", screenId: "parentScreen", bodyMode: "pixel-mode", source: "apps/h5/assets/component-bases/parent-component-390.png" },
+  { name: "home", hash: "home", screenId: "homeScreen", bodyMode: "home-mode", source: "design/extracted/home/home-runtime-preview.png" },
+  { name: "story", hash: "story", screenId: "playScreen", bodyMode: "pixel-mode", source: "design/extracted/story/story-runtime-preview.png" },
+  { name: "hatch", hash: "hatch", screenId: "hatchScreen", bodyMode: "pixel-mode", source: "design/extracted/hatch/hatch-runtime-preview.png" },
+  { name: "works", hash: "works", screenId: "galleryScreen", bodyMode: "pixel-mode", source: "design/extracted/works/works-runtime-preview.png" },
+  { name: "parent", hash: "parent", screenId: "parentScreen", bodyMode: "pixel-mode", source: "design/extracted/parent/parent-runtime-preview.png" },
 ];
 
 async function main() {

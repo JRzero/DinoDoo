@@ -405,3 +405,32 @@ body.canvas-mode .component-page {
     transform: scale(min(calc(100vw / 390), calc(100vh / 844)));
   }
 }
+
+/* H5 runtime uses the same element coordinates as the WeChat mini-game scenes. */
+.music-hotspot { left: 335px; top: 34px; width: 54px; height: 54px; }
+.dino-choice-main { left: 92px; top: 236px; width: 210px; height: 248px; }
+.dino-choice-left { left: 0; top: 430px; width: 184px; height: 250px; }
+.dino-choice-right { left: 206px; top: 430px; width: 184px; height: 250px; }
+.story-title-art { left: 50px; top: 38px; width: 290px; height: 92px; }
+.story-choice-a { left: 49px; top: 560px; width: 132px; height: 50px; }
+.story-choice-b { left: 210px; top: 560px; width: 134px; height: 50px; }
+.story-mic { left: 44px; top: 472px; width: 62px; height: 66px; }
+.story-replay { left: 106px; top: 472px; width: 62px; height: 66px; }
+.story-finish { left: 168px; top: 472px; width: 64px; height: 66px; }
+.hatch-prompt-input { left: 70px; top: 508px; width: 250px; height: 38px; }
+.hatch-mic { left: 52px; top: 612px; width: 78px; height: 48px; }
+.hatch-chip { top: 552px; width: 86px; height: 42px; }
+.chip-blue { left: 52px; }
+.chip-sing { left: 140px; }
+.chip-horn { left: 244px; }
+.chip-berry { display: none; pointer-events: none; }
+.hatch-submit { left: 114px; top: 608px; width: 162px; height: 54px; }
+.works-refresh { left: 126px; top: 616px; width: 138px; height: 48px; }
+.works-live-list { left: 62px; top: 246px; width: 266px; min-height: 174px; opacity: 0; }
+.parent-theme { left: 70px; top: 502px; width: 244px; height: 34px; }
+.parent-limit { left: 78px; top: 462px; width: 260px; height: 36px; }
+.parent-toggle { width: 72px; height: 40px; }
+.parent-safety { left: 248px; top: 258px; }
+.parent-music { left: 248px; top: 402px; }
+.parent-image { left: 248px; top: 330px; }
+.parent-save { left: 82px; top: 606px; width: 225px; height: 54px; }
