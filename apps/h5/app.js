@@ -9,6 +9,7 @@ const state = {
   activeText: "",
   route: "home",
   eggState: "idle",
+  hatchStatus: "idle",
   parentSaved: false,
 };
 
@@ -74,6 +75,8 @@ const assetSources = {
   hatchButtonImage: `${GE}/hatch/button-image.png`,
   hatchButtonStart: `${GE}/hatch/button-start-hatch.png`,
   hatchStatusLoading: `${GE}/hatch/status-loading.png`,
+  hatchStatusRecording: `${GE}/hatch/status-recording.png`,
+  hatchStatusImageSelected: `${GE}/hatch/status-image-selected.png`,
   hatchStatusSuccess: `${GE}/hatch/status-success.png`,
   worksTitle: `${GE}/works/works-title.png`,
   worksBoard: `${GE}/works/works-board.png`,
@@ -267,17 +270,13 @@ function drawHomeScene() {
   img("homeLogo", { x: 20, y: 30, w: 350, h: 145 });
   img("homeMusic", { x: 335, y: 34, w: 54, h: 54 });
   img("homeGuide", { x: 45, y: 198, w: 300, h: 36 });
-  img("homePath", { x: 116, y: 474, w: 160, h: 120 });
-  img("homePaws", { x: 170, y: 468, w: 120, h: 80 });
-  img("pedestalLarge", { x: 112, y: 389, w: 170, h: 64 });
-  img("pedestalSmall", { x: 14, y: 616, w: 150, h: 58 });
-  img("pedestalSmall", { x: 224, y: 616, w: 150, h: 58 });
+  img("homePaws", { x: 150, y: 486, w: 120, h: 80 });
   img("dinoXiaobao", { x: 112, y: 245, w: 170, h: 188 });
-  img("dinoAdai", { x: 0, y: 445, w: 178, h: 223 });
-  img("dinoGulu", { x: 214, y: 445, w: 174, h: 222 });
+  img("dinoAdai", { x: 0, y: 422, w: 178, h: 193 });
+  img("dinoGulu", { x: 214, y: 424, w: 174, h: 188 });
   img("badgeXiaobao", { x: 124, y: 430, w: 142, h: 54 });
-  img("badgeAdai", { x: 28, y: 626, w: 142, h: 54 });
-  img("badgeGulu", { x: 228, y: 626, w: 142, h: 54 });
+  img("badgeAdai", { x: 28, y: 614, w: 142, h: 54 });
+  img("badgeGulu", { x: 228, y: 614, w: 142, h: 54 });
 }
 
 function drawStoryScene() {
@@ -294,7 +293,11 @@ function drawStoryScene() {
 function drawHatchScene() {
   img("bgHatch", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
   img(eggKey(), { x: 65, y: 108, w: 260, h: 300 });
-  img(statusKey(), { x: 85, y: 488, w: 220, h: 44 });
+  const statusAsset = statusKey();
+  if (statusAsset) {
+    const narrowStatus = statusAsset === "hatchStatusRecording" || statusAsset === "hatchStatusImageSelected";
+    img(statusAsset, narrowStatus ? { x: 105, y: 488, w: 180, h: 44 } : { x: 85, y: 488, w: 220, h: 44 });
+  }
   img("hatchInputPanel", { x: 35, y: 542, w: 320, h: 160 });
   img("hatchChipBlue", { x: 52, y: 575, w: 86, h: 42 });
   img("hatchChipSing", { x: 140, y: 575, w: 86, h: 42 });
@@ -376,7 +379,11 @@ function eggKey() {
 }
 
 function statusKey() {
-  return state.eggState === "success" ? "hatchStatusSuccess" : "hatchStatusLoading";
+  if (state.hatchStatus === "success" || state.eggState === "success") return "hatchStatusSuccess";
+  if (state.hatchStatus === "recording") return "hatchStatusRecording";
+  if (state.hatchStatus === "imageSelected") return "hatchStatusImageSelected";
+  if (state.hatchStatus === "loading" || state.eggState === "cracking") return "hatchStatusLoading";
+  return null;
 }
 
 function toggleKey(settingKey) {
@@ -542,7 +549,10 @@ function speakCurrentLine() {
 
 function captureVoice(targetInput) {
   setAction(targetInput ? "hatch:voice" : "story:voice");
-  state.eggState = targetInput ? "cracking" : state.eggState;
+  if (targetInput) {
+    state.eggState = "cracking";
+    state.hatchStatus = "recording";
+  }
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
     if (targetInput) {
@@ -580,8 +590,17 @@ function addChip(value) {
   const current = input.value.trim();
   input.value = current ? `${current} ${value}` : value;
   state.eggState = "cracking";
+  state.hatchStatus = "loading";
   updateHatchInputState();
   setAction(`hatch:chip:${value}`);
+}
+
+function selectHatchImage() {
+  state.eggState = "cracking";
+  state.hatchStatus = "imageSelected";
+  $("hatchStatus").textContent = "宸查€夋嫨鍥剧墖";
+  setAction("hatch:image");
+  drawStage();
 }
 
 function hatchDino() {
@@ -590,6 +609,7 @@ function hatchDino() {
   const item = { id: `local-${Date.now()}`, name: copy.newDino, prompt, createdAt: new Date().toISOString() };
   state.hatchedDinos.unshift(item);
   state.eggState = "success";
+  state.hatchStatus = "success";
   saveLocalHatched();
   $("hatchStatus").textContent = copy.hatchReady;
   input.value = "";
@@ -629,6 +649,7 @@ function bindEvents() {
     if (text) updateStoryLine(text, "story:text");
   });
   $("hatchMicButton").addEventListener("click", () => captureVoice($("hatchPrompt")));
+  $("hatchImageButton").addEventListener("click", selectHatchImage);
   $("hatchPrompt").addEventListener("input", updateHatchInputState);
   document.querySelectorAll("[data-hatch-chip]").forEach((button) => button.addEventListener("click", () => addChip(button.dataset.hatchChip)));
   $("hatchForm").addEventListener("submit", (event) => { event.preventDefault(); hatchDino(); });

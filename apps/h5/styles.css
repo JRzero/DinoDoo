@@ -433,8 +433,8 @@ body.asset-mode .component-page {
 /* H5 runtime uses the same element coordinates as the WeChat mini-game scenes. */
 .music-hotspot { left: 335px; top: 34px; width: 54px; height: 54px; }
 .dino-choice-main { left: 92px; top: 236px; width: 210px; height: 248px; }
-.dino-choice-left { left: 0; top: 430px; width: 184px; height: 250px; }
-.dino-choice-right { left: 206px; top: 430px; width: 184px; height: 250px; }
+.dino-choice-left { left: 0; top: 410px; width: 184px; height: 230px; }
+.dino-choice-right { left: 206px; top: 410px; width: 184px; height: 230px; }
 .story-title-art { left: 50px; top: 38px; width: 290px; height: 92px; }
 .story-choice-a { left: 49px; top: 560px; width: 132px; height: 50px; }
 .story-choice-b { left: 210px; top: 560px; width: 134px; height: 50px; }
@@ -443,6 +443,7 @@ body.asset-mode .component-page {
 .story-finish { left: 168px; top: 472px; width: 64px; height: 66px; }
 .hatch-prompt-input { left: 78px; top: 548px; width: 234px; height: 26px; font-size: 14px; }
 .hatch-mic { left: 52px; top: 628px; width: 78px; height: 48px; }
+.hatch-image { left: 260px; top: 628px; width: 78px; height: 48px; border-radius: 24px; }
 .hatch-chip { top: 575px; width: 86px; height: 42px; }
 .chip-blue { left: 52px; }
 .chip-sing { left: 140px; }

@@ -47,6 +47,8 @@ $assetDimensions = @(
   @{ Path = "apps\h5\assets\game-elements\hatch\egg-cracking.png"; Width = 260; Height = 300 },
   @{ Path = "apps\h5\assets\game-elements\hatch\egg-success.png"; Width = 260; Height = 300 },
   @{ Path = "apps\h5\assets\game-elements\hatch\hatch-input-panel.png"; Width = 320; Height = 160 },
+  @{ Path = "apps\h5\assets\game-elements\hatch\status-recording.png"; Width = 180; Height = 44 },
+  @{ Path = "apps\h5\assets\game-elements\hatch\status-image-selected.png"; Width = 180; Height = 44 },
   @{ Path = "apps\h5\assets\game-elements\works\works-board.png"; Width = 310; Height = 468 },
   @{ Path = "apps\h5\assets\game-elements\works\work-card-featured.png"; Width = 280; Height = 220 },
   @{ Path = "apps\h5\assets\game-elements\works\work-card-normal.png"; Width = 135; Height = 190 },
@@ -79,6 +81,7 @@ $captureScript = Read-Text "scripts\capture-h5-pixel-playwright.mjs"
 $verifyCapturesScript = Read-Text "scripts\verify-h5-browser-captures.ps1"
 $compareCapturesScript = Read-Text "scripts\compare-h5-browser-captures.ps1"
 $runStaticChecksScript = Read-Text "scripts\run-h5-static-checks.ps1"
+$componentBuildScript = Read-Text "scripts\build-h5-component-assets.ps1"
 $designQaGateScript = Read-Text "scripts\assert-design-qa-gate.ps1"
 $qaReadme = Read-Text "qa\README.md"
 
@@ -86,6 +89,8 @@ Assert-NotContains $index "<canvas" "H5 must assemble mini-game element assets a
 Assert-NotContains $app "getContext" "H5 app still opens a canvas context."
 Assert-NotContains $app "drawImage" "H5 app still draws assets into a canvas instead of composing image elements."
 Assert-NotContains $app "runtime-preview" "H5 app must not use runtime preview screenshots as implementation assets."
+Assert-NotContains $app 'img("homePath"' "Home runtime should not redraw path stones already present in the clean scene background."
+Assert-NotContains $app 'img("pedestal' "Home runtime should not redraw separate pedestal patches over the background circles."
 Assert-NotContains $index 'src="/assets/components/' "index.html still mounts component visual slices. Runtime should use the mini-game element library."
 
 $legacyScreenRefs = @(
@@ -118,6 +123,7 @@ Assert-Contains $styles "pointer-events: none;" "Visual asset layers should not 
 Assert-Contains $styles ".component-page" "H5 pages are missing interaction-layer containers."
 Assert-Contains $styles ".image-button" "Clickable visual hotspots are missing transparent button styling."
 Assert-Contains $styles ".hatch-prompt-input.has-value" "Hatch prompt does not expose a populated-state backing."
+Assert-Contains $styles ".hatch-image" "Hatch image button hotspot styling is missing."
 Assert-Contains $styles ".nav-button" "Bottom navigation buttons are missing their uniform hotspot styling."
 Assert-Contains $styles "width: 130px;" "Bottom navigation buttons are not locked to one uniform size."
 Assert-Contains $styles ".nav-label" "Bottom navigation labels are missing accessible text anchors."
@@ -126,6 +132,7 @@ Assert-Contains $styles "background: transparent;" "Transparent interaction over
 Assert-Contains $index 'id="galleryTab"' "Bottom nav is missing gallery tab."
 Assert-Contains $index 'id="hatchTab"' "Bottom nav is missing hatch tab."
 Assert-Contains $index 'id="parentTab"' "Bottom nav is missing parent tab."
+Assert-Contains $index 'id="hatchImageButton"' "Hatch image button hotspot is missing."
 Assert-Matches $index '<button\s+id="galleryTab"[\s\S]*?<span\s+class="nav-label">[\s\S]*?</span>[\s\S]*?</button>' "Gallery tab is missing its accessible label element."
 Assert-Matches $index '<button\s+id="hatchTab"[\s\S]*?<span\s+class="nav-label">[\s\S]*?</span>[\s\S]*?</button>' "Hatch tab is missing its accessible label element."
 Assert-Matches $index '<button\s+id="parentTab"[\s\S]*?<span\s+class="nav-label">[\s\S]*?</span>[\s\S]*?</button>' "Parent tab is missing its accessible label element."
@@ -145,6 +152,9 @@ Assert-Contains $app "backendItems = options.showBackend ? list : []" "Gallery b
 Assert-Contains $app 'loadArtifacts({ showBackend: true })' "Gallery backend reveal path is missing."
 Assert-Contains $app 'loadArtifacts({ showBackend: false })' "Hatching gallery refresh should keep backend history hidden by default."
 Assert-Contains $app 'localStorage.getItem("dinodoo_hatched_dinos")' "Local hatching persistence is missing."
+Assert-Contains $app "hatchStatusImageSelected" "Hatch selected-image status asset is missing from runtime."
+Assert-Contains $app "hatchStatusRecording" "Hatch recording status asset is missing from runtime."
+Assert-Contains $app 'setAction("hatch:image")' "Hatch image button does not expose a testable action."
 
 Assert-Contains $captureScript 'await import("playwright")' "Browser QA capture script does not dynamically import Playwright."
 Assert-Contains $captureScript "viewport: { width: 390, height: 844 }" "Browser QA capture script does not use the normalized viewport."
@@ -164,6 +174,9 @@ Assert-Contains $runStaticChecksScript 'Invoke-OpenSpecValidate "add-prompt-dino
 Assert-Contains $runStaticChecksScript "go test ./..." "Static check runner does not run backend tests."
 Assert-Contains $runStaticChecksScript '"/#home", "/#story", "/#hatch", "/#works", "/#parent"' "Static check runner does not verify every QA hash URL."
 Assert-Contains $runStaticChecksScript "scripts\assert-design-qa-gate.ps1" "Static check runner does not enforce the design QA gate."
+Assert-Contains $componentBuildScript "H5 element asset library validated" "H5 component build entrypoint should validate the element library instead of slicing full screenshots."
+Assert-NotContains $componentBuildScript "home-final-390.png" "H5 component build entrypoint must not crop from full home screenshots."
+Assert-NotContains $componentBuildScript "screen-story-390.png" "H5 component build entrypoint must not crop from full page screenshots."
 Assert-Contains $designQaGateScript "design-qa.md says passed" "Design QA gate does not reject passed status without browser evidence."
 Assert-Contains $qaReadme "Product Design rules require explicit user approval before Playwright is used." "QA README does not document the Playwright approval boundary."
 Assert-Contains $qaReadme "final result: passed" "QA README does not document the pass criteria."

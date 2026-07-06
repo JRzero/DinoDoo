@@ -41,7 +41,7 @@ async function main() {
 
     await page.goto(`${baseUrl}/#home`, { waitUntil: "networkidle" });
     await waitForRoute(page, "home");
-    await expectAssetLayers(page, { route: "home", minSceneAssets: 12 });
+    await expectAssetLayers(page, { route: "home", minSceneAssets: 11 });
     const navHome = await navMetrics(page);
 
     await page.locator("#hatchTab").click();
@@ -93,11 +93,15 @@ async function main() {
     await page.locator("#hatchTab").click();
     await waitForRoute(page, "hatch");
     const hatchLayerBefore = await sceneLayerSignature(page);
+    await page.locator("#hatchImageButton").click();
+    await expectLastAction(page, "hatch:image");
+    await expectSceneLayerChanged(page, hatchLayerBefore, "hatch image button did not recompose the element asset layer");
+    const hatchLayerAfterImage = await sceneLayerSignature(page);
     await page.locator("#hatchPrompt").fill("\u84dd\u8272 \u4f1a\u5531\u6b4c");
     const horn = "\u957f\u89d2";
     await page.locator(`[data-hatch-chip="${horn}"]`).click();
     await expectLastAction(page, `hatch:chip:${horn}`);
-    await expectSceneLayerChanged(page, hatchLayerBefore, "hatch prompt did not recompose the element asset layer");
+    await expectSceneLayerChanged(page, hatchLayerAfterImage, "hatch prompt did not recompose the element asset layer");
     const promptValue = await page.locator("#hatchPrompt").inputValue();
     if (!promptValue.includes(horn)) {
       throw new Error(`Hatch chip did not update prompt input: ${promptValue}`);

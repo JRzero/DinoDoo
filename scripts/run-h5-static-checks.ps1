@@ -27,7 +27,7 @@ function Invoke-OpenSpecValidate($changeId) {
   Assert-LastExit "openspec validate $changeId"
 }
 
-Step "H5 component asset build" {
+Step "H5 element asset library check" {
   & (Join-Path $root "scripts\build-h5-component-assets.ps1")
 }
 
