@@ -6,7 +6,7 @@ final result: passed
 
 - Mini-game element library: `D:\ai.project\DinoDoo\apps\h5\assets\game-elements`
 - Element specs: `D:\ai.project\DinoDoo\design\elements`
-- Runtime visual references: `D:\ai.project\DinoDoo\design\extracted\home\home-runtime-preview.png`, `hatch`, `works`, `story`, and `parent` runtime previews
+- Runtime visual references: `D:\ai.project\DinoDoo\design\extracted\home\home-runtime-preview.png`, `story`, `hatch`, `works`, and `parent` runtime previews
 - Browser comparison sheet: `D:\ai.project\DinoDoo\qa\browser\comparison.png`
 - Browser manifest: `D:\ai.project\DinoDoo\qa\browser\manifest.json`
 - Browser diff report: `D:\ai.project\DinoDoo\qa\browser\diff-report.json`
@@ -23,7 +23,10 @@ final result: passed
 - H5 runtime uses `#sceneLayer` and `#navLayer` DOM image layers, not canvas rendering.
 - Runtime implementation does not reference full-screen page screenshots, runtime previews, or `/assets/components/` as app assets.
 - Home renders the scenic background plus independent title, music, guide, paw, dinosaur, badge, and nav PNG elements.
+- Story renders independent title, bubble, selected dinosaur, voice control, and choice-button PNG elements.
+- Hatch renders independent egg, input panel, chips, voice/image buttons, and start button; idle state does not show a loading status.
 - Works renders independent board, card, ribbon, dinosaur thumbnail, metadata, and refresh-button PNG elements.
+- Parent renders independent title, settings panel, rows, toggles, slider, time label, theme chips, permission buttons, and save button.
 - Bottom navigation renders independent background, icon, and label PNGs, with uniform transparent HTML hit areas above them.
 - Buttons, inputs, toggles, and selects remain real HTML interaction layers above the visual assets.
 
@@ -42,7 +45,7 @@ final result: passed
 - works: 16 scene assets + 7 nav assets
 - parent: 18 scene assets + 7 nav assets
 
-## Fixes In This Pass
+## Fixes Across The Current Passes
 
 - Rebuilt `home-logo.png` as a standalone transparent title asset with clean `?????` text and synced it to H5, `design/extracted`, and the WeChat game title sprite.
 - Removed duplicate home path and pedestal drawing from H5 so dinosaurs sit on the background circular platform areas instead of mismatched green patches.
@@ -50,20 +53,25 @@ final result: passed
 - Added a real H5 image-button hotspot and `hatch:image` interaction state for the right-side hatch image button.
 - Converted `scripts\build-h5-component-assets.ps1` into an element-library validator so static checks no longer crop components from full-screen screenshots.
 - Improved works cards by adding real dinosaur thumbnails into the image slots and moving text/metadata into cleaner card positions.
+- Improved parent lower controls by separating the daily time row, theme chips, permission buttons, and save button into clearer vertical bands.
+- Synced the story preview to the current deterministic default story state so QA compares matching state to matching state.
+- Cleaned element README files that previously contained garbled Chinese text.
 
 ## Pixel Diff Notes
 
-- home: changed ratio `0`.
-- hatch: changed ratio `0`.
-- works: changed ratio `0` after syncing the source preview to the improved populated card layout.
-- story: changed ratio `0.161466`; expected scene-state/content difference remains for later polish.
-- parent: changed ratio `0.086745`; deterministic settings state remains stable.
+All current QA screenshots match their source runtime previews exactly at the configured tolerance:
+
+- home: changed ratio `0`
+- story: changed ratio `0`
+- hatch: changed ratio `0`
+- works: changed ratio `0`
+- parent: changed ratio `0`
 
 ## Findings
 
-- No blocking interaction or layout findings remain for this pass.
-- Remaining visual polish should continue page by page, using the element-library contract rather than full-screen crop components.
-- Next likely candidates: story page text/bubble composition and parent page lower control density.
+- No blocking interaction or layout findings remain for the current H5 pass.
+- The current evidence proves the five QA routes are composed from independent element assets, have fixed bottom navigation, and match the checked runtime previews.
+- Future polish can still improve art direction asset quality, but the layout/module pass is clean against the current approved H5 element-library contract.
 
 ## Verification
 
@@ -75,3 +83,4 @@ final result: passed
 - `powershell -ExecutionPolicy Bypass -File scripts\verify-h5-browser-captures.ps1`
 - `powershell -ExecutionPolicy Bypass -File scripts\compare-h5-browser-captures.ps1`
 - `DINODOO_QA_URL=http://localhost:18180 node scripts\verify-h5-interactions-playwright.mjs`
+- `DINODOO_QA_URL=http://localhost:18180 powershell -ExecutionPolicy Bypass -File scripts\run-h5-static-checks.ps1`

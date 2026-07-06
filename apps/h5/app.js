@@ -365,22 +365,22 @@ function drawParentScene() {
   img("bgParent", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
   img("parentTitle", { x: 50, y: 128, w: 290, h: 92 });
   img("parentBoard", { x: 38, y: 216, w: 314, h: 468 });
-  img("parentRowSound", { x: 55, y: 250, w: 280, h: 72 });
-  img("parentRowImage", { x: 55, y: 330, w: 280, h: 72 });
-  img("parentRowMusic", { x: 55, y: 410, w: 280, h: 72 });
-  img(toggleKey("voiceEnabled"), { x: 248, y: 266, w: 72, h: 40 });
-  img(toggleKey("imageEnabled"), { x: 248, y: 346, w: 72, h: 40 });
-  img(toggleKey("musicEnabled"), { x: 248, y: 426, w: 72, h: 40 });
-  img("parentSlider", { x: 78, y: 462, w: 190, h: 36 });
-  img("parentTime30", { x: 268, y: 460, w: 70, h: 40 });
-  img("parentThemeIsland", { x: 70, y: 502, w: 58, h: 34 });
-  img("parentThemeForest", { x: 132, y: 502, w: 58, h: 34 });
-  img("parentThemeSnow", { x: 194, y: 502, w: 58, h: 34 });
-  img("parentThemeDesert", { x: 256, y: 502, w: 58, h: 34 });
-  img("parentVoicePermission", { x: 52, y: 546, w: 140, h: 50 });
-  img("parentImagePermission", { x: 198, y: 546, w: 140, h: 50 });
-  img("parentSave", { x: 82, y: 600, w: 225, h: 58 });
-  if (state.parentSaved) img("parentToastSaved", { x: 115, y: 548, w: 160, h: 44 });
+  img("parentRowSound", { x: 55, y: 244, w: 280, h: 72 });
+  img("parentRowImage", { x: 55, y: 324, w: 280, h: 72 });
+  img("parentRowMusic", { x: 55, y: 404, w: 280, h: 72 });
+  img(toggleKey("voiceEnabled"), { x: 248, y: 260, w: 72, h: 40 });
+  img(toggleKey("imageEnabled"), { x: 248, y: 340, w: 72, h: 40 });
+  img(toggleKey("musicEnabled"), { x: 248, y: 420, w: 72, h: 40 });
+  img("parentSlider", { x: 68, y: 484, w: 190, h: 36 });
+  img("parentTime30", { x: 268, y: 482, w: 70, h: 40 });
+  img("parentThemeIsland", { x: 70, y: 522, w: 58, h: 34 });
+  img("parentThemeForest", { x: 132, y: 522, w: 58, h: 34 });
+  img("parentThemeSnow", { x: 194, y: 522, w: 58, h: 34 });
+  img("parentThemeDesert", { x: 256, y: 522, w: 58, h: 34 });
+  img("parentVoicePermission", { x: 52, y: 558, w: 140, h: 50 });
+  img("parentImagePermission", { x: 198, y: 558, w: 140, h: 50 });
+  img("parentSave", { x: 82, y: 616, w: 225, h: 58 });
+  if (state.parentSaved) img("parentToastSaved", { x: 115, y: 558, w: 160, h: 44 });
 }
 
 function dinoKey(id) {

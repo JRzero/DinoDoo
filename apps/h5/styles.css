@@ -452,10 +452,10 @@ body.asset-mode .component-page {
 .hatch-submit { left: 114px; top: 626px; width: 162px; height: 52px; }
 .works-refresh { left: 126px; top: 636px; width: 138px; height: 48px; }
 .works-live-list { left: 55px; top: 246px; width: 280px; min-height: 220px; opacity: 0; }
-.parent-theme { left: 70px; top: 505px; width: 250px; height: 34px; }
-.parent-limit { left: 78px; top: 462px; width: 260px; height: 36px; }
+.parent-theme { left: 70px; top: 522px; width: 250px; height: 34px; }
+.parent-limit { left: 68px; top: 482px; width: 270px; height: 40px; }
 .parent-toggle { width: 72px; height: 40px; }
-.parent-safety { left: 248px; top: 266px; }
-.parent-music { left: 248px; top: 426px; }
-.parent-image { left: 248px; top: 346px; }
-.parent-save { left: 82px; top: 600px; width: 225px; height: 58px; }
+.parent-safety { left: 248px; top: 260px; }
+.parent-music { left: 248px; top: 420px; }
+.parent-image { left: 248px; top: 340px; }
+.parent-save { left: 82px; top: 616px; width: 225px; height: 58px; }
