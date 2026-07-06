@@ -1,172 +1,80 @@
-# 恐龙咚咚岛元素设计规格
+# DinoDoo Element Asset Specification
 
-## 设计方向
+## Direction
 
-主方向采用 `asset-board-02-component-library.png` 的组件化组织方式，视觉质感参考 `asset-board-01-faithful-reference.png`，按钮厚度和游戏感参考 `asset-board-03-rich-game-pack.png`。
+The product is assembled from a mini-game style element library. Runtime screens must be composed from an empty environment background plus independent transparent PNG sprites.
 
-核心原则：
+Core rules:
 
-- 先设计独立元素，再接入开发。
-- 背景不包含角色、文字、按钮、图标、面板、底部导航。
-- 所有角色、按钮、图标、面板、装饰件都独立导出。
-- 设计基准为 `390 x 844`，内容区 `390 x 684`，底部导航 `390 x 160`。
-- 视觉风格为软萌 3D 玩具质感、热带岛屿、奶油色 UI、木牌标题、橙绿蓝点缀。
+- Design independent elements first, then compose them in H5 and WeChat game runtimes.
+- Backgrounds are environment only. They must not include characters, eggs, icons, buttons, text panels, cards, bottom navigation, path stones, or pedestal/platform sprites.
+- Characters, buttons, icons, panels, labels, cards, decorations, path stones, and pedestals are exported as independent transparent PNG assets.
+- Design coordinate baseline: `390 x 844`; content area: `390 x 684`; bottom navigation: `390 x 160`.
+- Visual style: soft 3D toy texture, tropical island, cream UI panels, wooden title boards, orange/green/teal accents.
 
-## 画布和导出
+## Runtime Backgrounds
 
-| 类型 | 设计尺寸 | 导出格式 | 说明 |
-| --- | ---: | --- | --- |
-| 页面背景 | 390 x 684 | PNG | 不透明，完整空场景 |
-| 大角色 | 220-320 高 | PNG 透明底 | 保留完整身体和阴影 |
-| 小组件 | 按槽位 2x 绘制 | PNG 透明底 | 再按游戏槽位缩放 |
-| 底部导航 | 390 x 160 | PNG | 背景底座单独导出 |
-| 文案标签 | 2x 或 3x | PNG 透明底 | 中文文字要人工复核 |
-
-## 背景层
-
-| ID | 文件名 | 尺寸 | 内容要求 |
+| ID | File | Size | Requirement |
 | --- | --- | ---: | --- |
-| `bg.home` | `home-clean.png` | 390 x 684 | 首页岛屿草地，保留三个角色摆放空间 |
-| `bg.story` | `story-clean.png` | 390 x 684 | 故事小路/丛林入口，中心留给角色和气泡 |
-| `bg.hatch` | `hatch-clean.png` | 390 x 684 | 孵化森林/温暖光效，中心留给蛋和输入面板 |
-| `bg.works` | `works-clean.png` | 390 x 684 | 作品小屋外景，中心留给作品板 |
-| `bg.parent` | `parent-clean.png` | 390 x 684 | 家长树屋外景，中心留给设置面板 |
+| `bg.home` | `home-empty.png` | 390 x 684 | Empty island grassland environment for the home composition |
+| `bg.story` | `story-empty.png` | 390 x 684 | Empty story path or jungle entrance environment |
+| `bg.hatch` | `hatch-empty.png` | 390 x 684 | Empty hatch forest clearing environment |
+| `bg.works` | `works-empty.png` | 390 x 684 | Empty works hut exterior environment |
+| `bg.parent` | `parent-empty.png` | 390 x 684 | Empty parent treehouse exterior environment |
 
-背景禁止包含：恐龙、蛋、按钮、图标、文字、标题、卡片、底栏。
+Legacy `*-clean.png` files can remain as reference material, but H5 runtime composition must use `*-empty.png`.
 
-## 品牌和装饰
+## Brand And Decorations
 
-| ID | 建议尺寸 | 内容 |
+| ID | Suggested Size | Content |
 | --- | ---: | --- |
-| `brand.logo` | 350 x 145 | 木牌 Logo，文字“恐龙咚咚岛”，带蛋和叶子 |
-| `decor.music-button` | 72 x 72 | 右上角圆形音乐按钮 |
-| `decor.music-notes` | 96 x 96 | 彩色音符组 |
-| `decor.sun` | 96 x 96 | 微笑太阳 |
-| `decor.leaves` | 160 x 120 | 边缘叶子装饰，可拆多组 |
-| `decor.pawprints` | 120 x 80 | 彩色脚印 |
-| `decor.flowers-rocks` | 180 x 120 | 小花、石头、草丛组合 |
+| `brand.logo` | 350 x 145 | Wooden logo board, text `恐龙咚咚岛` |
+| `decor.music-button` | 72 x 72 | Round yellow music button |
+| `decor.pawprints` | 120 x 80 | Colored paw prints |
+| `decor.path-stones` | 160 x 120 | Transparent stepping-stone path |
+| `home.pedestal.large` | 170 x 64 | Main dinosaur platform |
+| `home.pedestal.small` | 150 x 58 | Lower dinosaur platforms |
 
-## 角色层
+## Characters
 
-| 角色 | 建议导出 | 说明 |
+| Character | Export | Notes |
 | --- | ---: | --- |
-| 小暴 | 240 x 280 | 橙色霸王龙，主角，张嘴开心 |
-| 花花 | 230 x 250 | 粉色三角龙，女孩气质，可爱亲和 |
-| 咕噜 | 240 x 260 | 蓝绿色长脖小恐龙，温和 |
-| 阿呆 | 230 x 250 | 男孩形象三角龙，颜色与花花区分明显 |
+| `小暴` | 240 x 280 | Orange happy T-rex |
+| `阿呆` | 230 x 250 | Boyish triceratops-like dinosaur |
+| `咕噜` | 240 x 260 | Teal long-neck dinosaur |
 
-角色要求：
+Every character keeps a transparent PNG body and a matching independent name badge.
 
-- 透明底 PNG。
-- 保留柔和接触阴影，但不能烘入背景。
-- 每个角色另配一个名字牌。
-- 同一光源：左上方暖光。
+## Bottom Navigation
 
-## 底部导航
+Fixed tabs: `作品` / `孵化` / `家长`.
 
-底部导航固定为：`作品 / 孵化 / 家长`。
-
-| 元素 | 建议尺寸 | 内容 |
+| Element | Size | Content |
 | --- | ---: | --- |
-| `nav.background` | 390 x 160 | 奶油色底座，三个凸起圆角按钮座 |
-| `nav.icon.works` | 120 x 100 | 绿色作品册 + 爪印 |
-| `nav.icon.hatch` | 140 x 120 | 孵化蛋/破壳小恐龙，不用麦克风 |
-| `nav.icon.parent` | 120 x 100 | 亲子图标 + 爱心 |
-| `nav.label.works` | 110 x 48 | 作品 |
-| `nav.label.hatch` | 110 x 48 | 孵化 |
-| `nav.label.parent` | 110 x 48 | 家长 |
+| `nav.background` | 390 x 160 | Cream base with three raised pads, no icons or labels baked in |
+| `nav.icon.works` | 120 x 100 | Green work/book icon |
+| `nav.icon.hatch` | 140 x 120 | Hatching egg icon; no microphone |
+| `nav.icon.parent` | 120 x 100 | Parent-child icon with heart |
+| `nav.label.works` | 110 x 48 | `作品` |
+| `nav.label.hatch` | 110 x 48 | `孵化` |
+| `nav.label.parent` | 110 x 48 | `家长` |
 
-布局槽位：
+Current H5 nav slots:
 
-| 项 | x | y | w | h |
-| --- | ---: | ---: | ---: | ---: |
-| 作品按钮座 | 24 | 12 | 106 | 96 |
-| 孵化按钮座 | 142 | 0 | 106 | 112 |
-| 家长按钮座 | 260 | 12 | 106 | 96 |
-| 文字基线区 | 0 | 108 | 390 | 40 |
-
-## 首页元素
-
-| 元素 | 建议尺寸 | 说明 |
-| --- | ---: | --- |
-| 首页 Logo | 350 x 145 | 与品牌 Logo 一致 |
-| 引导文案 | 300 x 36 | “选择一只恐龙，开始故事吧！” |
-| 恐龙底座 | 150 x 58 | 石台/草地底座，可复用 |
-| 角色名字牌 | 140 x 54 | 橙、粉、蓝三色，虚线边 |
-| 音乐按钮 | 72 x 72 | 圆形黄橙按钮 |
-
-## 故事互动页元素
-
-| 元素 | 建议尺寸 | 说明 |
-| --- | ---: | --- |
-| 标题木牌 | 290 x 92 | 可替换文字 |
-| 故事气泡 | 180 x 120 | 奶油白气泡，适配 2-3 行中文 |
-| 选择按钮 A | 150 x 56 | 橙色按钮 |
-| 选择按钮 B | 150 x 56 | 蓝绿色按钮 |
-| 语音按钮 | 190 x 66 | 麦克风 + “说话” |
-
-## 孵化页元素
-
-| 元素 | 建议尺寸 | 说明 |
-| --- | ---: | --- |
-| 大蛋 idle | 240 x 280 | 完整蛋，绿色斑点 |
-| 大蛋 cracking | 260 x 300 | 裂纹与光效 |
-| 破壳小恐龙 | 260 x 300 | 蛋壳 + 小恐龙 |
-| 输入面板 | 320 x 160 | 奶油卡片，含输入槽 |
-| 提示词标签 | 86 x 42 | 蓝色、会唱歌、长角、爱草莓 |
-| 开始孵化按钮 | 180 x 58 | 绿色主按钮 |
-| 麦克风按钮 | 78 x 48 | 蓝色小按钮 |
-| 图片按钮 | 78 x 48 | 绿色/蓝色小按钮 |
-
-## 作品页元素
-
-| 元素 | 建议尺寸 | 说明 |
-| --- | ---: | --- |
-| 作品标题木牌 | 290 x 92 | “作品小屋” |
-| 作品列表板 | 310 x 468 | 木框 + 奶油底 |
-| 精选作品卡 | 280 x 220 | 大图卡片 |
-| 普通作品卡 | 135 x 190 | 小图卡片 |
-| 标签飘带 | 120 x 42 | 精选作品 / 新孵化 |
-| 刷新按钮 | 138 x 48 | “刷新作品” |
-| 日期/脚印标记 | 80 x 32 | 小型信息元素 |
-
-## 家长页元素
-
-| 元素 | 建议尺寸 | 说明 |
-| --- | ---: | --- |
-| 家长标题木牌 | 290 x 92 | “家长树屋” |
-| 设置主板 | 314 x 468 | 木框 + 奶油设置列表 |
-| 设置行 | 280 x 72 | 图标、标题、控件 |
-| 开关 | 86 x 44 | 开/关状态 |
-| 滑杆 | 190 x 36 | 时间/音量控制 |
-| 主题标签 | 58 x 34 | 岛屿、森林、雪地、沙漠 |
-| 保存按钮 | 225 x 58 | 绿色主按钮 |
-
-## 状态和交互
-
-| 类型 | 状态 |
+| Element | Slot |
 | --- | --- |
-| 按钮 | normal、pressed、disabled |
-| 底部导航 | normal、active |
-| 录音 | idle、recording、done、error |
-| 孵化 | idle、loading、success、fail |
-| 上传图片 | empty、selected、error |
-| Toast | success、warning、error |
+| `nav.background` | `x=0 y=684 w=390 h=160` |
+| `nav.icon.works` | `x=43 y=702 w=60 h=58` |
+| `nav.icon.hatch` | `x=152 y=686 w=86 h=96` |
+| `nav.icon.parent` | `x=295 y=702 w=68 h=58` |
+| `nav.label.works` | `x=37 y=792 w=88 h=38` |
+| `nav.label.hatch` | `x=151 y=792 w=88 h=38` |
+| `nav.label.parent` | `x=296 y=792 w=88 h=38` |
 
-## 首批设计顺序
+## Acceptance
 
-1. 底部导航完整套件：背景、三图标、三标签。
-2. 首页套件：Logo、三个角色、三个名字牌、音乐按钮。
-3. 孵化套件：蛋、输入面板、提示词标签、主按钮、语音/图片按钮。
-4. 作品套件：作品板、卡片、飘带、刷新按钮。
-5. 家长套件：设置板、开关、滑杆、主题标签、保存按钮。
-6. 装饰件：脚印、叶子、花、石头、音符、太阳。
-
-## 验收标准
-
-- 任意元素单独放到透明背景上也完整。
-- 任意背景上不能出现组件或角色。
-- 中文文字必须人工复核，不接受乱码或近似字。
-- 同类按钮尺寸统一，文字基线一致。
-- 底部导航必须和设计稿一致：作品 / 孵化 / 家长。
-- 所有元素在 `390 x 844` 设计坐标中有明确槽位。
+- Any single element must look complete on a transparent background.
+- Any runtime background must not contain UI components or characters.
+- The H5 source must not use full-screen screenshots, runtime preview PNGs, or `/assets/components/` as implementation assets.
+- All interactive controls must keep real HTML hit targets above the visual image layers.
+- The browser QA screenshots for all five routes must match the runtime preview evidence at the configured tolerance.

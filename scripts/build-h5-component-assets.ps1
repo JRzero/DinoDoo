@@ -4,11 +4,11 @@ $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $elementRoot = Join-Path $root "apps\h5\assets\game-elements"
 
 $requiredAssets = @(
-  "backgrounds\home-clean.png",
-  "backgrounds\story-clean.png",
-  "backgrounds\hatch-clean.png",
-  "backgrounds\works-clean.png",
-  "backgrounds\parent-clean.png",
+  "backgrounds\home-empty.png",
+  "backgrounds\story-empty.png",
+  "backgrounds\hatch-empty.png",
+  "backgrounds\works-empty.png",
+  "backgrounds\parent-empty.png",
   "home\home-logo.png",
   "home\dino-xiaobao.png",
   "home\dino-adai.png",
@@ -39,4 +39,4 @@ foreach ($asset in $requiredAssets) {
 }
 
 Write-Output "H5 element asset library validated: apps\h5\assets\game-elements"
-Write-Output "Legacy full-screen component slicing is intentionally disabled. Runtime pages must compose clean backgrounds and independent PNG elements."
+Write-Output "Legacy full-screen component slicing is intentionally disabled. Runtime pages must compose empty environment backgrounds and independent PNG elements."

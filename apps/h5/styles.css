@@ -433,8 +433,8 @@ body.asset-mode .component-page {
 /* H5 runtime uses the same element coordinates as the WeChat mini-game scenes. */
 .music-hotspot { left: 335px; top: 34px; width: 54px; height: 54px; }
 .dino-choice-main { left: 92px; top: 236px; width: 210px; height: 248px; }
-.dino-choice-left { left: 0; top: 410px; width: 184px; height: 230px; }
-.dino-choice-right { left: 206px; top: 410px; width: 184px; height: 230px; }
+.dino-choice-left { left: 0; top: 430px; width: 184px; height: 250px; }
+.dino-choice-right { left: 206px; top: 430px; width: 184px; height: 250px; }
 .story-title-art { left: 50px; top: 38px; width: 290px; height: 92px; }
 .story-choice-a { left: 49px; top: 560px; width: 132px; height: 50px; }
 .story-choice-b { left: 210px; top: 560px; width: 134px; height: 50px; }

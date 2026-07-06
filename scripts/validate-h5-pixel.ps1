@@ -27,11 +27,11 @@ function Assert-Matches($text, $pattern, $message) {
 Add-Type -AssemblyName System.Drawing
 
 $assetDimensions = @(
-  @{ Path = "apps\h5\assets\game-elements\backgrounds\home-clean.png"; Width = 390; Height = 684 },
-  @{ Path = "apps\h5\assets\game-elements\backgrounds\story-clean.png"; Width = 390; Height = 684 },
-  @{ Path = "apps\h5\assets\game-elements\backgrounds\hatch-clean.png"; Width = 390; Height = 684 },
-  @{ Path = "apps\h5\assets\game-elements\backgrounds\works-clean.png"; Width = 390; Height = 684 },
-  @{ Path = "apps\h5\assets\game-elements\backgrounds\parent-clean.png"; Width = 390; Height = 684 },
+  @{ Path = "apps\h5\assets\game-elements\backgrounds\home-empty.png"; Width = 390; Height = 684 },
+  @{ Path = "apps\h5\assets\game-elements\backgrounds\story-empty.png"; Width = 390; Height = 684 },
+  @{ Path = "apps\h5\assets\game-elements\backgrounds\hatch-empty.png"; Width = 390; Height = 684 },
+  @{ Path = "apps\h5\assets\game-elements\backgrounds\works-empty.png"; Width = 390; Height = 684 },
+  @{ Path = "apps\h5\assets\game-elements\backgrounds\parent-empty.png"; Width = 390; Height = 684 },
   @{ Path = "apps\h5\assets\game-elements\home\home-logo.png"; Width = 350; Height = 145 },
   @{ Path = "apps\h5\assets\game-elements\home\dino-xiaobao.png"; Width = 240; Height = 280 },
   @{ Path = "apps\h5\assets\game-elements\home\dino-adai.png"; Width = 230; Height = 250 },
@@ -89,8 +89,9 @@ Assert-NotContains $index "<canvas" "H5 must assemble mini-game element assets a
 Assert-NotContains $app "getContext" "H5 app still opens a canvas context."
 Assert-NotContains $app "drawImage" "H5 app still draws assets into a canvas instead of composing image elements."
 Assert-NotContains $app "runtime-preview" "H5 app must not use runtime preview screenshots as implementation assets."
-Assert-NotContains $app 'img("homePath"' "Home runtime should not redraw path stones already present in the clean scene background."
-Assert-NotContains $app 'img("pedestal' "Home runtime should not redraw separate pedestal patches over the background circles."
+Assert-Contains $app 'img("homePath"' "Home runtime should compose the home path stones as an independent mini-game element."
+Assert-Contains $app 'img("pedestalLarge"' "Home runtime should compose the large pedestal as an independent mini-game element."
+Assert-Contains $app 'img("pedestalSmall"' "Home runtime should compose small pedestals as independent mini-game elements."
 Assert-NotContains $index 'src="/assets/components/' "index.html still mounts component visual slices. Runtime should use the mini-game element library."
 
 $legacyScreenRefs = @(
@@ -138,7 +139,7 @@ Assert-Matches $index '<button\s+id="hatchTab"[\s\S]*?<span\s+class="nav-label">
 Assert-Matches $index '<button\s+id="parentTab"[\s\S]*?<span\s+class="nav-label">[\s\S]*?</span>[\s\S]*?</button>' "Parent tab is missing its accessible label element."
 
 Assert-Contains $app "const assetSources" "H5 app does not define the mini-game element asset source map."
-Assert-Contains $app '`${GE}/backgrounds/home-clean.png`' "Home clean background is not sourced from the element library."
+Assert-Contains $app '`${GE}/backgrounds/home-empty.png`' "Home empty background is not sourced from the element library."
 Assert-Contains $app '`${GE}/home/dino-xiaobao.png`' "Home dinosaur sprite is not sourced from the element library."
 Assert-Contains $app '`${GE}/nav/nav-bg.png`' "Bottom nav base is not sourced from the element library."
 Assert-Contains $app 'document.createElement("img")' "H5 app does not create independent image elements for assets."
