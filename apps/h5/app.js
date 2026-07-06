@@ -106,6 +106,11 @@ const assetSources = {
   parentToastSaved: `${GE}/parent/toast-saved.png`,
 };
 
+const demoWorks = [
+  { id: "demo-xiaobao", name: copy.dinos.xiaobao, prompt: "\u7231\u5192\u9669\u7684\u5c0f\u66b4\u9f99" },
+  { id: "demo-adai", name: copy.dinos.adai, prompt: "\u7231\u5531\u6b4c\u7684\u5c0f\u6050\u9f99" },
+  { id: "demo-gulu", name: copy.dinos.gulu, prompt: "\u60a0\u95f2\u7684\u5c0f\u8155\u9f99" },
+];
 const screenRoutes = {
   home: ["", "homeScreen"],
   story: ["", "playScreen"],
@@ -303,7 +308,7 @@ function drawWorksScene() {
   img("bgWorks", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
   img("worksTitle", { x: 50, y: 128, w: 290, h: 92 });
   img("worksBoard", { x: 40, y: 216, w: 310, h: 468 });
-  const works = state.artifacts.length ? state.artifacts : state.hatchedDinos;
+  const works = state.artifacts.length ? state.artifacts : (state.hatchedDinos.length ? state.hatchedDinos : demoWorks);
   if (!works.length) {
     img("worksEmpty", { x: 70, y: 330, w: 250, h: 150 });
     drawWrappedText(copy.noWorks, 195, 416, 210, 20, 1, { font: "bold 15px sans-serif", color: "#8a673c" });
@@ -424,7 +429,7 @@ async function loadSettings() {
     state.settings = normalizeSettings(data);
   } catch {
     state.themes = ["island", "forest", "snow", "desert"];
-    state.settings = { voiceEnabled: true, imageEnabled: true, musicEnabled: true, dailyLimitMinutes: 30, theme: "island" };
+    state.settings = { voiceEnabled: true, imageEnabled: true, musicEnabled: false, dailyLimitMinutes: 30, theme: "island" };
   }
   renderSettings();
 }
@@ -433,7 +438,7 @@ function normalizeSettings(data) {
   return {
     voiceEnabled: data.voice_enabled !== false,
     imageEnabled: data.image_generation_enabled !== false,
-    musicEnabled: data.music_enabled !== false,
+    musicEnabled: data.music_enabled === true,
     dailyLimitMinutes: data.daily_minutes_limit || 30,
     theme: data.enabled_themes?.[0] || data.theme || "island",
   };

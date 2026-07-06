@@ -15,6 +15,7 @@ const expectedScreens = {
 
 async function main() {
   const { chromium } = await loadPlaywright();
+  await resetQaSettings();
   const browser = await chromium.launch({
     executablePath: await findBrowserExecutable(),
   });
@@ -123,10 +124,29 @@ async function main() {
 
     console.log("H5 Playwright interaction regression passed.");
   } finally {
+    await resetQaSettings().catch((error) => console.warn(error));
     await browser.close();
   }
 }
 
+async function resetQaSettings() {
+  const response = await fetch(`${baseUrl}/api/v1/parent/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      daily_minutes_limit: 30,
+      enabled_themes: ["island"],
+      voice_enabled: true,
+      image_generation_enabled: true,
+      music_enabled: false,
+      save_audio_enabled: false,
+      memory_enabled: false,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to reset QA settings: ${response.status} ${await response.text()}`);
+  }
+}
 async function waitForRoute(page, route) {
   await page.waitForFunction(
     ({ route, screenId }) => {

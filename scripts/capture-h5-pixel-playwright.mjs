@@ -30,6 +30,7 @@ async function main() {
       isMobile: true,
       hasTouch: true,
     });
+    await resetQaSettings();
     await page.addInitScript(() => {
       window.localStorage.removeItem("dinodoo_hatched_dinos");
       window.sessionStorage.clear();
@@ -117,6 +118,24 @@ async function main() {
   console.log(`Browser QA captures written to ${path.relative(root, outDir)}`);
 }
 
+async function resetQaSettings() {
+  const response = await fetch(`${baseUrl}/api/v1/parent/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      daily_minutes_limit: 30,
+      enabled_themes: ["island"],
+      voice_enabled: true,
+      image_generation_enabled: true,
+      music_enabled: false,
+      save_audio_enabled: false,
+      memory_enabled: false,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to reset QA settings: ${response.status} ${await response.text()}`);
+  }
+}
 async function findBrowserExecutable() {
   const candidates = [
     env.DINODOO_QA_BROWSER_EXECUTABLE,

@@ -28,6 +28,7 @@ type Settings struct {
 	EnabledThemes     []string `json:"enabled_themes"`
 	ImageGeneration   bool     `json:"image_generation_enabled"`
 	VoiceEnabled      bool     `json:"voice_enabled"`
+	MusicEnabled      bool     `json:"music_enabled"`
 	SaveAudioEnabled  bool     `json:"save_audio_enabled"`
 	MemoryEnabled     bool     `json:"memory_enabled"`
 	UpdatedAt         string   `json:"updated_at"`
@@ -144,6 +145,7 @@ func defaultSettings() Settings {
 		EnabledThemes:     []string{"adventure", "colors", "numbers", "sleep"},
 		ImageGeneration:   true,
 		VoiceEnabled:      true,
+		MusicEnabled:      false,
 		SaveAudioEnabled:  false,
 		MemoryEnabled:     false,
 		UpdatedAt:         now,
