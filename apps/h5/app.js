@@ -8,9 +8,11 @@ const state = {
   selectedDino: null,
   activeText: "",
   recognizing: false,
+  route: "home",
 };
 
 const $ = (id) => document.getElementById(id);
+const label = (value) => value;
 
 const dinoAssets = {
   xiaobao: "/assets/xiaobao.png",
@@ -18,23 +20,56 @@ const dinoAssets = {
   gulu: "/assets/gulu.png",
 };
 
+const copy = {
+  dinos: {
+    xiaobao: "\u5c0f\u66b4",
+    adai: "\u963f\u5446",
+    gulu: "\u5495\u565c",
+  },
+  intro: "\u9009\u4e00\u53ea\u6050\u9f99\uff0c\u6545\u4e8b\u5c31\u5f00\u59cb\u5566\u3002",
+  storyA: "\u5b83\u5728\u7011\u5e03\u8fb9\u627e\u5230\u4e00\u679a\u95ea\u5149\u811a\u5370\u3002",
+  storyB: "\u5b83\u542c\u89c1\u68ee\u6797\u91cc\u4f20\u6765\u8f7b\u8f7b\u7684\u6b4c\u58f0\u3002",
+  voiceFallback: "\u6211\u60f3\u542c\u4e00\u4e2a\u52c7\u6562\u7684\u5c0f\u6545\u4e8b\u3002",
+  hatchPlaceholder: "\u8bf4\u8bf4\u4f60\u60f3\u8981\u7684\u5c0f\u6050\u9f99...",
+  hatchDefault: "\u84dd\u8272 \u4f1a\u5531\u6b4c",
+  hatchReady: "\u5c0f\u6050\u9f99\u5df2\u5b75\u5316\uff01",
+  saved: "\u5df2\u4fdd\u5b58",
+  newDino: "\u65b0\u5c0f\u6050\u9f99",
+  noWorks: "\u8fd8\u6ca1\u6709\u65b0\u4f5c\u54c1\uff0c\u5148\u53bb\u5b75\u5316\u4e00\u53ea\u5427\u3002",
+};
+
 const canvasSources = {
-  home: "/assets/home-final-390.png",
-  story: "/assets/screen-story-390.png",
-  hatch: "/assets/screen-hatch-390.png",
-  works: "/assets/screen-works-390.png",
-  parent: "/assets/screen-parent-390.png",
+  homeTop: "/assets/components/home-bg-top.png",
+  homeMid: "/assets/components/home-bg-mid.png",
+  homeLower: "/assets/components/home-bg-lower.png",
+  storyTop: "/assets/components/story-bg-top.png",
+  storyMid: "/assets/components/story-bg-mid.png",
+  storyLower: "/assets/components/story-bg-lower.png",
+  hatchTop: "/assets/components/hatch-bg-top.png",
+  hatchMid: "/assets/components/hatch-bg-mid.png",
+  hatchLower: "/assets/components/hatch-bg-lower.png",
+  worksTop: "/assets/components/works-bg-top.png",
+  worksMid: "/assets/components/works-bg-mid.png",
+  worksLower: "/assets/components/works-bg-lower.png",
+  parentTop: "/assets/components/parent-bg-top.png",
+  parentMid: "/assets/components/parent-bg-mid.png",
+  parentLower: "/assets/components/parent-bg-lower.png",
   nav: "/assets/nav-strip.png",
 };
 
-const canvasStage = {
-  scene: null,
-  sceneCtx: null,
-  nav: null,
-  navCtx: null,
-  assets: {},
-  ready: false,
+const sceneLayerMap = {
+  home: ["homeTop", "homeMid", "homeLower"],
+  story: ["storyTop", "storyMid", "storyLower"],
+  hatch: ["hatchTop", "hatchMid", "hatchLower"],
+  works: ["worksTop", "worksMid", "worksLower"],
+  parent: ["parentTop", "parentMid", "parentLower"],
 };
+
+const sceneSlots = [
+  [0, 0, 390, 230],
+  [0, 230, 390, 224],
+  [0, 454, 390, 230],
+];
 
 const screenRoutes = {
   home: ["", "homeScreen"],
@@ -42,14 +77,6 @@ const screenRoutes = {
   hatch: ["hatchTab", "hatchScreen"],
   works: ["galleryTab", "galleryScreen"],
   parent: ["parentTab", "parentScreen"],
-};
-
-const screenRouteNames = {
-  homeScreen: "home",
-  playScreen: "story",
-  hatchScreen: "hatch",
-  galleryScreen: "works",
-  parentScreen: "parent",
 };
 
 const api = {
@@ -76,692 +103,426 @@ const api = {
     if (!res.ok) throw new Error(await errorText(res));
     return res.json();
   },
-  async del(path) {
-    const res = await fetch(path, { method: "DELETE" });
-    if (!res.ok) throw new Error(await errorText(res));
-  },
 };
 
-async function errorText(res) {
-  try {
-    const json = await res.json();
-    return json?.error?.message || res.statusText;
-  } catch {
-    return res.statusText;
+const canvasStage = {
+  scene: null,
+  sceneCtx: null,
+  nav: null,
+  navCtx: null,
+  assets: {},
+  ready: false,
+};
+
+function errorText(res) {
+  return res.text().catch(() => res.statusText || "request failed");
+}
+
+function setAction(name) {
+  document.body.dataset.lastAction = name;
+}
+
+function showScreen(route) {
+  const entry = screenRoutes[route] || screenRoutes.home;
+  state.route = route in screenRoutes ? route : "home";
+  document.body.dataset.route = state.route;
+  document.body.classList.remove("home-mode", "pixel-mode", "canvas-mode");
+  document.body.classList.add("canvas-mode");
+  document.body.classList.add(state.route === "home" ? "home-mode" : "pixel-mode");
+
+  document.querySelectorAll(".screen").forEach((el) => el.classList.remove("active"));
+  $(entry[1])?.classList.add("active");
+  document.querySelectorAll(".nav-button").forEach((el) => el.classList.remove("active"));
+  if (entry[0]) $(entry[0])?.classList.add("active");
+  drawStage();
+}
+
+function routeTo(route, options = {}) {
+  const hash = `#${route}`;
+  if (!options.silent && window.location.hash !== hash) {
+    window.location.hash = route;
+    return;
   }
+  showScreen(route);
 }
 
-async function init() {
-  document.body.classList.add("home-mode", "canvas-mode");
-  setupCanvas();
-  bindTabs();
-  bindDinoChoices();
-  bindPlay();
-  bindHatch();
-  bindSettings();
-  const [_, themesRes, dinosRes, settings] = await Promise.all([
-    loadCanvasAssets(),
-    api.get("/api/v1/themes"),
-    api.get("/api/v1/dinos"),
-    api.get("/api/v1/parent/settings"),
-  ]);
-  state.themes = themesRes.themes || [];
-  state.dinos = dinosRes.dinos || [];
-  state.settings = settings;
-  state.hatchedDinos = loadHatchedDinos();
-  state.selectedDino = findDino("xiaobao");
-  renderThemes();
-  renderSettings();
-  await loadArtifacts();
-  applyRouteFromHash();
-  window.addEventListener("hashchange", applyRouteFromHash);
-}
-
-function setupCanvas() {
-  canvasStage.scene = $("sceneCanvas");
-  canvasStage.nav = $("navCanvas");
-  canvasStage.sceneCtx = configureCanvas(canvasStage.scene, 390, 684);
-  canvasStage.navCtx = configureCanvas(canvasStage.nav, 390, 160);
-}
-
-function configureCanvas(canvas, width, height) {
-  const ratio = window.devicePixelRatio || 1;
-  canvas.width = Math.round(width * ratio);
-  canvas.height = Math.round(height * ratio);
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-  const context = canvas.getContext("2d");
-  context.setTransform(ratio, 0, 0, ratio, 0, 0);
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
-  return context;
-}
-
-async function loadCanvasAssets() {
-  const entries = await Promise.all(
-    Object.entries(canvasSources).map(async ([name, src]) => [name, await loadImage(src)]),
-  );
-  canvasStage.assets = Object.fromEntries(entries);
-  canvasStage.ready = true;
-  drawNavCanvas();
+function applyRouteFromHash() {
+  const route = (window.location.hash || "#home").slice(1) || "home";
+  showScreen(screenRoutes[route] ? route : "home");
 }
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load ${src}`));
+    img.src = src;
   });
+}
+
+async function loadCanvasAssets() {
+  const entries = Object.entries(canvasSources);
+  const loaded = await Promise.all(entries.map(async ([key, src]) => [key, await loadImage(src)]));
+  canvasStage.assets = Object.fromEntries(loaded);
+  canvasStage.ready = true;
+  document.body.dataset.imagesReady = "true";
+  drawNavCanvas();
+  drawStage();
+}
+
+function clearScene() {
+  canvasStage.sceneCtx.clearRect(0, 0, 390, 684);
+}
+
+function drawStage() {
+  if (!canvasStage.ready || !canvasStage.sceneCtx) return;
+  clearScene();
+  const layers = sceneLayerMap[state.route] || sceneLayerMap.home;
+  layers.forEach((key, index) => {
+    const img = canvasStage.assets[key];
+    const [x, y, w, h] = sceneSlots[index];
+    if (img) canvasStage.sceneCtx.drawImage(img, x, y, w, h);
+  });
+  drawDynamicLayer();
 }
 
 function drawNavCanvas() {
   if (!canvasStage.ready || !canvasStage.navCtx) return;
   canvasStage.navCtx.clearRect(0, 0, 390, 160);
-  canvasStage.navCtx.drawImage(canvasStage.assets.nav, 0, 0, 390, 160);
+  const nav = canvasStage.assets.nav;
+  if (nav) canvasStage.navCtx.drawImage(nav, 0, 0, 390, 160);
 }
 
-function drawStage() {
-  if (!canvasStage.ready || !canvasStage.sceneCtx) return;
-  const route = state.route || document.body.dataset.route || "home";
-  const source = canvasStage.assets[route] || canvasStage.assets.home;
+function drawDynamicLayer() {
   const ctx = canvasStage.sceneCtx;
-  ctx.clearRect(0, 0, 390, 684);
-  ctx.drawImage(source, 0, 0, 390, 684, 0, 0, 390, 684);
-  drawDynamicLayer(ctx, route);
+  if (!ctx) return;
+  if (state.route === "hatch") drawHatchPrompt(ctx);
+  if (state.route === "works") drawWorksPreview(ctx);
+  if (state.route === "parent") drawParentState(ctx);
 }
 
-function drawDynamicLayer(ctx, route) {
-  if (route === "story") {
-    drawStoryState(ctx);
-  } else if (route === "hatch") {
-    drawHatchState(ctx);
-  } else if (route === "works") {
-    drawWorksState(ctx);
-  } else if (route === "parent") {
-    drawParentState(ctx);
-  }
-}
-
-function drawStoryState(ctx) {
-  if (!state.activeText) return;
+function drawHatchPrompt(ctx) {
+  const prompt = $("hatchPrompt")?.value?.trim();
+  if (!prompt) return;
   ctx.save();
-  ctx.fillStyle = "#704015";
-  ctx.font = "900 14px Arial, Microsoft YaHei, sans-serif";
-  ctx.textAlign = "center";
-  wrapCanvasText(ctx, state.activeText, 128, 222, 112, 20, 3);
-  ctx.restore();
-}
-
-function drawHatchState(ctx) {
-  const prompt = $("hatchPrompt")?.value?.trim() || "";
-  const status = $("hatchStatus")?.textContent?.trim() || "";
-  ctx.save();
-  if (prompt) {
-    ctx.fillStyle = "rgba(255, 248, 224, 0.94)";
-    roundRect(ctx, 112, 482, 224, 40, 18);
-    ctx.fill();
-    ctx.fillStyle = "#79502c";
-    ctx.font = "900 15px Arial, Microsoft YaHei, sans-serif";
-    ctx.textAlign = "left";
-    wrapCanvasText(ctx, prompt, 126, 506, 190, 18, 1);
-  }
-  if (status) {
-    ctx.fillStyle = "#7a4317";
-    ctx.font = "900 12px Arial, Microsoft YaHei, sans-serif";
-    ctx.textAlign = "center";
-    wrapCanvasText(ctx, status, 195, 548, 250, 16, 2);
-  }
-  ctx.restore();
-}
-
-function drawWorksState(ctx) {
-  const item = state.hatchedDinos?.[0];
-  if (!item) return;
-  ctx.save();
-  ctx.fillStyle = "rgba(255, 248, 219, 0.92)";
-  roundRect(ctx, 166, 548, 152, 58, 8);
+  ctx.fillStyle = "rgba(255, 249, 225, 0.86)";
+  roundRect(ctx, 76, 546, 238, 42, 20);
   ctx.fill();
-  ctx.fillStyle = "#704015";
-  ctx.font = "900 13px Arial, Microsoft YaHei, sans-serif";
+  ctx.fillStyle = "#73502a";
+  ctx.font = "700 16px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(prompt.slice(0, 16), 195, 567);
+  ctx.restore();
+}
+
+function drawWorksPreview(ctx) {
+  if (!state.hatchedDinos.length) return;
+  const latest = state.hatchedDinos[0];
+  ctx.save();
+  ctx.fillStyle = "rgba(255, 246, 220, 0.82)";
+  roundRect(ctx, 86, 306, 220, 58, 14);
+  ctx.fill();
+  ctx.fillStyle = "#6b421e";
+  ctx.font = "800 16px Arial, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(item.title || "新朋友", 224, 572);
-  ctx.fillStyle = "#7d5a2d";
-  ctx.font = "800 10px Arial, Microsoft YaHei, sans-serif";
-  wrapCanvasText(ctx, item.description || "刚孵化的小恐龙", 224, 588, 86, 12, 2);
+  ctx.fillText(latest.name || copy.newDino, 106, 329);
+  ctx.font = "700 12px Arial, sans-serif";
+  ctx.fillText(latest.prompt || copy.hatchDefault, 106, 350);
   ctx.restore();
 }
 
 function drawParentState(ctx) {
-  const toggles = [
-    ["safetyToggle", 286, 366],
-    ["voiceToggle", 286, 452],
-  ];
   ctx.save();
+  ctx.fillStyle = "rgba(255, 246, 220, 0.8)";
+  roundRect(ctx, 118, 410, 154, 34, 17);
+  ctx.fill();
+  ctx.fillStyle = "#6b421e";
+  ctx.font = "800 15px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`${state.settings?.dailyLimitMinutes || 30} min`, 195, 431);
+
+  const toggles = [
+    ["safetyToggle", 290, 274],
+    ["voiceToggle", 290, 362],
+    ["imageToggle", 290, 449],
+  ];
   toggles.forEach(([id, x, y]) => {
     const checked = $(id)?.checked;
-    ctx.fillStyle = checked ? "rgba(120, 201, 54, 0.95)" : "rgba(167, 114, 58, 0.55)";
-    roundRect(ctx, x - 28, y - 14, 56, 28, 14);
+    ctx.fillStyle = checked ? "rgba(110, 206, 58, 0.95)" : "rgba(173, 133, 82, 0.75)";
+    roundRect(ctx, x - 31, y - 14, 62, 28, 14);
     ctx.fill();
-    ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+    ctx.fillStyle = "rgba(255, 250, 232, 0.95)";
     ctx.beginPath();
-    ctx.arc(checked ? x + 13 : x - 13, y, 11, 0, Math.PI * 2);
+    ctx.arc(checked ? x + 16 : x - 16, y, 11, 0, Math.PI * 2);
     ctx.fill();
   });
-  const status = $("settingsStatus")?.textContent?.trim();
-  if (status) {
-    ctx.fillStyle = "#2d6816";
-    ctx.font = "900 13px Arial, Microsoft YaHei, sans-serif";
-    ctx.fillText(status, 195, 670);
-  }
   ctx.restore();
 }
 
-function roundRect(ctx, x, y, width, height, radius) {
-  const r = Math.min(radius, width / 2, height / 2);
+function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
-  ctx.lineTo(x + width - r, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
-  ctx.lineTo(x + width, y + height - r);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
-  ctx.lineTo(x + r, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
 }
 
-function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
-  const chars = Array.from(String(text));
-  let line = "";
-  let lines = [];
-  chars.forEach((char) => {
-    const test = `${line}${char}`;
-    if (ctx.measureText(test).width > maxWidth && line) {
-      lines.push(line);
-      line = char;
+async function loadSession() {
+  try {
+    state.session = await api.post("/api/sessions", { childName: "Dino" });
+  } catch {
+    state.session = { id: "local-session" };
+  }
+}
+
+async function loadDinos() {
+  try {
+    const data = await api.get("/api/dinos");
+    state.dinos = Array.isArray(data.items) ? data.items : [];
+  } catch {
+    state.dinos = [
+      { id: "xiaobao", name: copy.dinos.xiaobao, voiceTone: "bright" },
+      { id: "adai", name: copy.dinos.adai, voiceTone: "gentle" },
+      { id: "gulu", name: copy.dinos.gulu, voiceTone: "calm" },
+    ];
+  }
+  state.selectedDino = state.dinos[0] || { id: "xiaobao", name: copy.dinos.xiaobao };
+}
+
+async function loadSettings() {
+  try {
+    state.settings = await api.get("/api/parent/settings");
+    state.themes = Array.isArray(state.settings.themes) ? state.settings.themes : [];
+  } catch {
+    state.themes = ["island", "forest", "snow", "desert"];
+    state.settings = {
+      voiceEnabled: true,
+      imageEnabled: true,
+      musicEnabled: true,
+      dailyLimitMinutes: 30,
+      theme: "island",
+    };
+  }
+  renderSettings();
+}
+
+function loadLocalHatched() {
+  try {
+    state.hatchedDinos = JSON.parse(localStorage.getItem("dinodoo_hatched_dinos") || "[]");
+  } catch {
+    state.hatchedDinos = [];
+  }
+}
+
+function saveLocalHatched() {
+  localStorage.setItem("dinodoo_hatched_dinos", JSON.stringify(state.hatchedDinos.slice(0, 8)));
+}
+
+async function loadArtifacts(options = {}) {
+  let list = [];
+  try {
+    const data = await api.get("/api/artifacts");
+    list = Array.isArray(data.items) ? data.items : [];
+  } catch {
+    list = [];
+  }
+  const backendItems = options.showBackend ? list : [];
+  state.artifacts = [...state.hatchedDinos, ...backendItems];
+  renderArtifacts();
+}
+
+function renderSettings() {
+  const select = $("themeSelect");
+  select.innerHTML = "";
+  state.themes.forEach((theme) => {
+    const option = document.createElement("option");
+    option.value = theme;
+    option.textContent = theme;
+    select.appendChild(option);
+  });
+  select.value = state.settings.theme || state.themes[0] || "island";
+  $("dailyLimit").value = state.settings.dailyLimitMinutes || 30;
+  $("safetyToggle").checked = state.settings.voiceEnabled !== false;
+  $("voiceToggle").checked = state.settings.musicEnabled !== false;
+  $("imageToggle").checked = state.settings.imageEnabled !== false;
+  drawStage();
+}
+
+function renderArtifacts() {
+  const list = $("artifactList");
+  if (!list) return;
+  if (!state.artifacts.length) {
+    list.textContent = copy.noWorks;
+    drawStage();
+    return;
+  }
+  list.textContent = state.artifacts
+    .slice(0, 3)
+    .map((item) => `${item.name || copy.newDino} ${item.prompt || item.description || copy.hatchDefault}`)
+    .join("\n");
+  drawStage();
+}
+
+function chooseDino(id) {
+  state.selectedDino = state.dinos.find((item) => item.id === id) || { id, name: copy.dinos[id] || copy.dinos.xiaobao };
+  $("speakerName").textContent = state.selectedDino.name;
+  $("dinoLine").textContent = copy.intro;
+  $("dinoImage").src = dinoAssets[id] || dinoAssets.xiaobao;
+  setAction(`home:dino:${id}`);
+  routeTo("story");
+}
+
+function updateStoryLine(text, action) {
+  state.activeText = text;
+  $("dinoLine").textContent = text;
+  setAction(action);
+}
+
+function speakCurrentLine() {
+  setAction("story:replay");
+  if (!window.speechSynthesis) return;
+  const utterance = new SpeechSynthesisUtterance($("dinoLine").textContent || copy.intro);
+  utterance.lang = "zh-CN";
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
+function captureVoice(targetInput) {
+  setAction(targetInput ? "hatch:voice" : "story:voice");
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    if (targetInput) {
+      targetInput.value = copy.hatchDefault;
+      updateHatchInputState();
     } else {
-      line = test;
+      updateStoryLine(copy.voiceFallback, "story:voice");
     }
-  });
-  if (line) lines.push(line);
-  lines = lines.slice(0, maxLines);
-  lines.forEach((item, index) => ctx.fillText(item, x, y + index * lineHeight));
+    return;
+  }
+  const rec = new SpeechRecognition();
+  rec.lang = "zh-CN";
+  rec.interimResults = false;
+  rec.onresult = (event) => {
+    const text = event.results?.[0]?.[0]?.transcript || "";
+    if (targetInput) {
+      targetInput.value = text;
+      updateHatchInputState();
+    } else {
+      updateStoryLine(text, "story:voice");
+    }
+  };
+  rec.start();
 }
 
-function bindTabs() {
-  const tabs = [
-    ["galleryTab", "works"],
-    ["hatchTab", "hatch"],
-    ["parentTab", "parent"],
-  ];
-  tabs.forEach(([tabId, route]) => {
-    $(tabId).addEventListener("click", () => {
-      markAction(`nav:${route}`);
-      navigateTo(route);
-    });
-  });
+function updateHatchInputState() {
+  const input = $("hatchPrompt");
+  input.classList.toggle("has-value", Boolean(input.value.trim()));
+  drawStage();
 }
 
-function bindDinoChoices() {
-  document.querySelectorAll("[data-dino]").forEach((button) => {
-    button.addEventListener("click", () => selectDino(button.dataset.dino));
-  });
+function addChip(value) {
+  const input = $("hatchPrompt");
+  const current = input.value.trim();
+  input.value = current ? `${current} ${value}` : value;
+  updateHatchInputState();
+  setAction(`hatch:chip:${value}`);
 }
 
-function bindPlay() {
-  $("musicButton").addEventListener("click", () => {
-    markAction("music");
-    browserSpeak(state.settings?.voice_enabled === false ? "声音已经关掉啦。" : "叮咚，恐龙岛准备好啦。");
+function hatchDino() {
+  const input = $("hatchPrompt");
+  const prompt = input.value.trim() || copy.hatchDefault;
+  const item = {
+    id: `local-${Date.now()}`,
+    name: copy.newDino,
+    prompt,
+    createdAt: new Date().toISOString(),
+  };
+  state.hatchedDinos.unshift(item);
+  saveLocalHatched();
+  $("hatchStatus").textContent = copy.hatchReady;
+  input.value = "";
+  updateHatchInputState();
+  setAction("hatch:submit");
+  loadArtifacts({ showBackend: false });
+  routeTo("works");
+}
+
+function saveSettings() {
+  state.settings = {
+    theme: $("themeSelect").value,
+    dailyLimitMinutes: Number($("dailyLimit").value) || 30,
+    voiceEnabled: $("safetyToggle").checked,
+    musicEnabled: $("voiceToggle").checked,
+    imageEnabled: $("imageToggle").checked,
+  };
+  $("settingsStatus").textContent = copy.saved;
+  setAction("parent:save");
+  drawStage();
+  api.put("/api/parent/settings", state.settings).catch(() => null);
+}
+
+function bindEvents() {
+  document.querySelectorAll(".dino-choice").forEach((button) => {
+    button.addEventListener("click", () => chooseDino(button.dataset.dino));
   });
+  $("musicButton").addEventListener("click", () => setAction("home:music"));
   $("homeButton").addEventListener("click", () => {
-    markAction("story:home");
-    navigateTo("home");
+    setAction("story:home");
+    routeTo("home");
   });
-  $("choiceA").addEventListener("click", async () => {
-    markAction("story:choice-a");
-    await submitTurn($("choiceA").textContent);
+  $("choiceA").addEventListener("click", () => updateStoryLine(copy.storyA, "story:choice-a"));
+  $("choiceB").addEventListener("click", () => updateStoryLine(copy.storyB, "story:choice-b"));
+  $("speakButton").addEventListener("click", speakCurrentLine);
+  $("micButton").addEventListener("click", () => captureVoice(null));
+  $("finishButton").addEventListener("click", () => {
+    setAction("story:finish");
+    routeTo("works");
   });
-  $("choiceB").addEventListener("click", async () => {
-    markAction("story:choice-b");
-    await submitTurn($("choiceB").textContent);
-  });
-  $("finishButton").addEventListener("click", finishSession);
-  $("speakButton").addEventListener("click", async () => {
-    markAction("story:replay");
-    await ensureSession();
-    speakCurrent();
-  });
-  $("micButton").addEventListener("click", listen);
   $("textForm").addEventListener("submit", (event) => {
     event.preventDefault();
     const text = $("textInput").value.trim();
-    if (!text) return;
-    $("textInput").value = "";
-    submitTurn(text);
+    if (text) updateStoryLine(text, "story:text");
   });
-  $("refreshArtifacts").addEventListener("click", () => {
-    markAction("works:refresh");
-    loadArtifacts({ showBackend: true, showEmpty: true });
+  $("hatchMicButton").addEventListener("click", () => captureVoice($("hatchPrompt")));
+  $("hatchPrompt").addEventListener("input", updateHatchInputState);
+  document.querySelectorAll("[data-hatch-chip]").forEach((button) => {
+    button.addEventListener("click", () => addChip(button.dataset.hatchChip));
   });
-}
-
-function bindHatch() {
-  const input = $("hatchPrompt");
-  input.addEventListener("input", syncHatchInputState);
-  input.addEventListener("blur", syncHatchInputState);
   $("hatchForm").addEventListener("submit", (event) => {
     event.preventDefault();
     hatchDino();
   });
-  $("hatchMicButton").addEventListener("click", listenForHatch);
-  document.querySelectorAll("[data-hatch-chip]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const chip = button.dataset.hatchChip;
-      markAction(`hatch:chip:${chip}`);
-      const parts = input.value.trim() ? [input.value.trim(), chip] : [chip];
-      input.value = parts.join("，");
-      syncHatchInputState();
-      $("hatchStatus").textContent = `已经加上：${chip}`;
-      input.focus();
-    });
+  $("refreshArtifacts").addEventListener("click", () => {
+    setAction("works:refresh");
+    loadArtifacts({ showBackend: true });
   });
-}
-
-function syncHatchInputState() {
-  $("hatchPrompt").classList.toggle("has-value", Boolean($("hatchPrompt").value.trim()));
-  drawStage();
-}
-
-function bindSettings() {
+  $("galleryTab").addEventListener("click", () => routeTo("works"));
+  $("hatchTab").addEventListener("click", () => routeTo("hatch"));
+  $("parentTab").addEventListener("click", () => routeTo("parent"));
+  $("saveSettings").addEventListener("click", saveSettings);
   ["themeSelect", "dailyLimit", "safetyToggle", "voiceToggle", "imageToggle"].forEach((id) => {
-    $(id).addEventListener("change", () => {
-      markAction(`parent:change:${id}`);
-      drawStage();
-    });
+    $(id).addEventListener("change", drawStage);
   });
-  $("dailyLimit").addEventListener("input", drawStage);
-  $("saveSettings").addEventListener("click", async () => {
-    markAction("parent:save");
-    const selectedTheme = $("themeSelect").value;
-    const settings = {
-      ...state.settings,
-      daily_minutes_limit: Number($("dailyLimit").value || 15),
-      enabled_themes: selectedTheme ? [selectedTheme] : ["adventure"],
-      image_generation_enabled: $("imageToggle").checked,
-      voice_enabled: $("voiceToggle").checked,
-      save_audio_enabled: false,
-      memory_enabled: false,
-    };
-    state.settings = await api.put("/api/v1/parent/settings", settings);
-    drawStage();
-    $("settingsStatus").textContent = "已保存";
-    drawStage();
-    if (state.session) await startSession(state.selectedDino?.code);
-  });
+  window.addEventListener("hashchange", applyRouteFromHash);
 }
 
-async function selectDino(code) {
-  markAction(`home:dino:${code}`);
-  state.selectedDino = findDino(code);
-  navigateTo("story");
-  await startSession(code);
-}
-
-async function ensureSession() {
-  if (state.session?.status === "active") return state.session;
-  const dino = state.selectedDino?.code || "xiaobao";
-  await startSession(dino, { speak: false });
-  return state.session;
-}
-
-async function startSession(dinoCode, options = {}) {
-  const theme = state.settings?.enabled_themes?.[0] || "adventure";
-  const dino = dinoCode || state.selectedDino?.code || "xiaobao";
-  state.session = await api.post("/api/v1/play-sessions", { theme, dino });
-  renderSession();
-  if (options.speak !== false) speakCurrent();
-}
-
-async function submitTurn(input) {
-  await ensureSession();
-  setBusy(true);
-  try {
-    const result = await api.post(`/api/v1/play-sessions/${state.session.id}/turns`, {
-      input,
-      source: "h5",
-    });
-    state.session = result.session;
-    renderSession(result.turn);
-    speakCurrent();
-  } finally {
-    setBusy(false);
-  }
-}
-
-async function finishSession() {
-  markAction("story:finish");
-  await ensureSession();
-  setBusy(true);
-  try {
-    const result = await api.post(`/api/v1/play-sessions/${state.session.id}/finish`, {});
-    state.session = result.session;
-    await loadArtifacts({ showBackend: true });
-    navigateTo("works");
-  } finally {
-    setBusy(false);
-  }
-}
-
-function renderSession(turn) {
-  const session = state.session;
-  const last = turn || [...(session.turns || [])].reverse().find((item) => item.role === "assistant");
-  if (!last) return;
-  state.activeText = last.text;
-  $("speakerName").textContent = last.speaker;
-  $("dinoLine").textContent = last.text;
-  $("choiceA").textContent = last.choices?.[0] || "去看看";
-  $("choiceB").textContent = last.choices?.[1] || "叫朋友";
-  $("dinoAvatar").className = `dino-avatar ${last.expression || "happy"}`;
-  const activeDino = dinoBySpeaker(last.speaker) || findDino(session.state?.active_dino) || state.selectedDino;
-  $("dinoImage").src = dinoAssets[activeDino?.code] || dinoAssets.xiaobao;
-  $("dinoImage").alt = activeDino?.name || last.speaker;
-  const theme = state.themes.find((item) => item.code === session.theme);
-  $("themePill").textContent = theme?.name || "彩虹森林";
-  drawStage();
-}
-
-function renderThemes() {
-  $("themeSelect").innerHTML = state.themes
-    .map((theme) => `<option value="${escapeHtml(theme.code)}">${escapeHtml(theme.name)}</option>`)
-    .join("");
-}
-
-function renderSettings() {
-  const s = state.settings || {};
-  $("themeSelect").value = s.enabled_themes?.[0] || "adventure";
-  $("dailyLimit").value = s.daily_minutes_limit || 15;
-  $("imageToggle").checked = s.image_generation_enabled !== false;
-  $("voiceToggle").checked = s.voice_enabled !== false;
-  $("safetyToggle").checked = true;
-  drawStage();
-}
-
-async function loadArtifacts(options = {}) {
-  const result = await api.get("/api/v1/artifacts");
-  const list = result.artifacts || [];
-  state.artifacts = list;
-  const hatched = state.hatchedDinos || [];
-  const backendItems = options.showBackend ? list : [];
-  const items = [...hatched.map((item) => ({ ...item, source: "hatch" })), ...backendItems];
-  $("artifactList").innerHTML = items.length
-    ? renderWorksLiveItem(items[0])
-    : options.showEmpty
-      ? renderWorksEmptyItem()
-      : "";
-  drawStage();
-  list.forEach((item) => {
-    const btn = document.querySelector(`[data-delete-artifact="${item.id}"]`);
-    if (btn) {
-      btn.addEventListener("click", async () => {
-        await api.del(`/api/v1/artifacts/${item.id}`);
-        await loadArtifacts();
-      });
-    }
-  });
-}
-
-function renderWorksEmptyItem() {
-  return `
-    <article class="works-live-card works-live-empty">
-      <div>
-        <strong>还没有作品</strong>
-        <span>先去孵化一只小恐龙吧</span>
-      </div>
-    </article>
-  `;
-}
-
-function renderWorksLiveItem(item) {
-  const isHatch = item.source === "hatch";
-  const title = escapeHtml(isHatch ? item.title || "新朋友" : item.title || "恐龙卡片");
-  const description = escapeHtml(isHatch ? item.description || "" : "故事作品卡");
-  const img = escapeAttr(isHatch ? item.image || "/assets/gulu.png" : item.url || "/assets/gulu.png");
-  return `
-    <article class="works-live-card">
-      <img src="${img}" alt="${title}" />
-      <div>
-        <strong>${title}</strong>
-        <span>${description}</span>
-      </div>
-    </article>
-  `;
-}
-
-function hatchDino() {
-  markAction("hatch:submit");
-  const prompt = $("hatchPrompt").value.trim();
-  const description = prompt || "一只会唱歌的蓝色小恐龙";
-  syncHatchInputState();
-  const profile = dinoFromPrompt(description);
-  const dino = {
-    id: `hatch_${Date.now()}`,
-    title: `${profile.name}小恐龙`,
-    description,
-    image: dinoAssets[profile.code] || dinoAssets.xiaobao,
-    created_at: new Date().toISOString(),
-  };
-  state.hatchedDinos = [dino, ...state.hatchedDinos].slice(0, 12);
-  saveHatchedDinos(state.hatchedDinos);
-  state.selectedDino = findDino(profile.code);
-  drawStage();
-  $("hatchStatus").textContent = `孵化成功：${dino.title}`;
-  loadArtifacts({ showBackend: false });
-  navigateTo("works");
-}
-
-function dinoFromPrompt(prompt) {
-  if (/角|三角|勇敢|粉|帽/.test(prompt)) return { code: "adai", name: "阿呆" };
-  if (/蓝|唱|高|长|水|水果|慢/.test(prompt)) return { code: "gulu", name: "咕噜" };
-  return { code: "xiaobao", name: "小暴" };
-}
-
-function listenForHatch() {
-  markAction("hatch:voice");
-  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!Recognition) {
-    $("hatchPrompt").focus();
-    $("hatchStatus").textContent = "可以直接打字告诉恐龙蛋。";
-    return;
-  }
-  const recognition = new Recognition();
-  recognition.lang = "zh-CN";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-  $("hatchStatus").textContent = "恐龙蛋在听你说。";
-  recognition.onresult = (event) => {
-    const text = event.results?.[0]?.[0]?.transcript || "";
-    if (text) {
-      $("hatchPrompt").value = text;
-      syncHatchInputState();
-      $("hatchStatus").textContent = "听到啦，点开始孵化吧。";
-    }
-  };
-  recognition.onerror = () => {
-    $("hatchStatus").textContent = "没听清，可以再说一次。";
-  };
-  recognition.start();
-}
-
-function renderArtifact(item) {
-  const title = escapeHtml(item.title || "恐龙卡片");
-  const provider = escapeHtml(item.provider || "local");
-  return `
-    <article class="artifact">
-      <img src="${escapeAttr(item.url)}" alt="${title}" />
-      <div class="artifact-body">
-        <div>
-          <strong>${title}</strong>
-          <small>${new Date(item.created_at).toLocaleString()} · ${provider}</small>
-        </div>
-        <button class="danger-button" type="button" data-delete-artifact="${escapeAttr(item.id)}">删除</button>
-      </div>
-    </article>
-  `;
-}
-
-function renderHatchedArtifact(item) {
-  const title = escapeHtml(item.title || "孵化小恐龙");
-  const description = escapeHtml(item.description || "");
-  return `
-    <article class="artifact hatch-artifact">
-      <img src="${escapeAttr(item.image)}" alt="${title}" />
-      <div class="artifact-body">
-        <div>
-          <strong>${title}</strong>
-          <small>${description}</small>
-        </div>
-      </div>
-    </article>
-  `;
-}
-
-async function speakCurrent() {
-  if (!state.settings?.voice_enabled || !state.activeText) return;
-  try {
-    const res = await fetch("/api/v1/audio/speech", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: state.activeText, voice_style: "warm" }),
-    });
-    if (res.status === 200) {
-      const blob = await res.blob();
-      const audio = new Audio(URL.createObjectURL(blob));
-      await audio.play();
-      return;
-    }
-  } catch {
-    // Browser speech fallback below.
-  }
-  browserSpeak(state.activeText);
-}
-
-function browserSpeak(text) {
-  if (!("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "zh-CN";
-  utterance.rate = 0.9;
-  utterance.pitch = 1.15;
-  window.speechSynthesis.speak(utterance);
-}
-
-function listen() {
-  markAction("story:voice");
-  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!Recognition) {
-    $("textInput").focus();
-    $("dinoLine").textContent = "可以点下面打字告诉恐龙。";
-    return;
-  }
-  const recognition = new Recognition();
-  recognition.lang = "zh-CN";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-  state.recognizing = true;
-  $("micButton").textContent = "听中";
-  recognition.onresult = (event) => {
-    const text = event.results?.[0]?.[0]?.transcript || "";
-    if (text) submitTurn(text);
-  };
-  recognition.onerror = () => {
-    $("dinoLine").textContent = "我没听清，再说一次吧。";
-  };
-  recognition.onend = () => {
-    state.recognizing = false;
-    $("micButton").textContent = "说话";
-  };
-  recognition.start();
-}
-
-function setBusy(busy) {
-  ["choiceA", "choiceB", "finishButton", "micButton", "speakButton"].forEach((id) => {
-    $(id).disabled = busy;
-  });
-}
-
-function showScreen(tabId, screenId) {
-  ["hatchTab", "galleryTab", "parentTab"].forEach((id) => $(id).classList.toggle("active", id === tabId));
-  ["homeScreen", "playScreen", "hatchScreen", "galleryScreen", "parentScreen"].forEach((id) => {
-    $(id).classList.toggle("active", id === screenId);
-  });
-  document.body.classList.toggle("home-mode", screenId === "homeScreen");
-  document.body.classList.toggle(
-    "pixel-mode",
-    ["playScreen", "hatchScreen", "galleryScreen", "parentScreen"].includes(screenId),
-  );
-  state.route = screenRouteNames[screenId] || "home";
-  document.body.dataset.route = state.route;
-  drawStage();
-}
-
-function applyRouteFromHash() {
-  const route = window.location.hash.replace(/^#/, "").toLowerCase() || "home";
-  const target = screenRoutes[route] || screenRoutes.home;
-  showScreen(target[0], target[1]);
-  if (route === "works") loadArtifacts({ showBackend: false });
-}
-
-function navigateTo(route) {
-  const target = screenRoutes[route] || screenRoutes.home;
-  const nextHash = `#${route}`;
-  if (window.location.hash === nextHash) {
-    showScreen(target[0], target[1]);
-    if (route === "works") loadArtifacts({ showBackend: false });
-    return;
-  }
-  window.location.hash = route;
-}
-
-function markAction(name) {
-  document.body.dataset.lastAction = name;
-}
-
-function findDino(code) {
-  return state.dinos.find((dino) => dino.code === code) || state.dinos[0] || { code: "xiaobao", name: "小暴" };
-}
-
-function dinoBySpeaker(speaker) {
-  return state.dinos.find((dino) => dino.name === speaker);
-}
-
-function loadHatchedDinos() {
-  try {
-    return JSON.parse(localStorage.getItem("dinodoo_hatched_dinos") || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveHatchedDinos(items) {
-  localStorage.setItem("dinodoo_hatched_dinos", JSON.stringify(items));
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function escapeAttr(value) {
-  return escapeHtml(value).replaceAll("`", "&#096;");
+async function init() {
+  canvasStage.scene = $("sceneCanvas");
+  canvasStage.sceneCtx = canvasStage.scene.getContext("2d");
+  canvasStage.nav = $("navCanvas");
+  canvasStage.navCtx = canvasStage.nav.getContext("2d");
+  document.body.classList.add("home-mode", "canvas-mode");
+  bindEvents();
+  loadLocalHatched();
+  await Promise.all([loadSession(), loadDinos(), loadSettings(), loadCanvasAssets()]);
+  await loadArtifacts({ showBackend: false });
+  applyRouteFromHash();
 }
 
 init().catch((error) => {
   console.error(error);
-  $("dinoLine").textContent = "启动失败，请刷新一下。";
+  document.body.dataset.route = "error";
 });
