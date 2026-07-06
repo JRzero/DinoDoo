@@ -1,0 +1,12 @@
+data/
+server/tmp/
+server/api
+server/api.exe
+*.log
+.env
+.env.local
+
+# Local visual QA outputs
+design/previews/layout-qa/
+qa/browser/
+qa/static-source-vs-bases.png

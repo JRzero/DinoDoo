@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>恐龙咚咚岛</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main id="app" class="shell">
+      <section class="play" aria-live="polite">
+        <canvas id="sceneCanvas" class="scene-canvas" width="390" height="684" aria-hidden="true"></canvas>
+        <div id="homeScreen" class="screen active">
+          <div class="component-scene home-scene">
+            <h1 class="visually-hidden">恐龙咚咚岛</h1>
+            <p class="visually-hidden">选择一只恐龙，开始故事吧!</p>
+            <button id="musicButton" class="image-button music-hotspot" type="button" aria-label="播放音乐">
+            </button>
+            <button class="image-button dino-choice dino-choice-main" type="button" data-dino="xiaobao" aria-label="选择小暴">
+            </button>
+            <button class="image-button dino-choice dino-choice-left" type="button" data-dino="adai" aria-label="选择阿呆">
+            </button>
+            <button class="image-button dino-choice dino-choice-right" type="button" data-dino="gulu" aria-label="选择咕噜">
+            </button>
+          </div>
+        </div>
+
+        <div id="playScreen" class="screen component-page story-page">
+          <button id="homeButton" class="image-button story-title-art" type="button" aria-label="回到首页换恐龙">
+          </button>
+          <div class="story-hotspots">
+            <span id="themePill" class="visually-hidden">彩虹森林</span>
+            <div id="dinoAvatar" class="visually-hidden">
+              <img id="dinoImage" src="/assets/xiaobao.png" alt="小暴" />
+            </div>
+            <span id="speakerName" class="visually-hidden">小暴</span>
+            <p id="dinoLine" class="visually-hidden">选一只恐龙，故事就开始啦。</p>
+            <button id="choiceA" class="image-button story-choice-a" type="button">
+            </button>
+            <button id="choiceB" class="image-button story-choice-b" type="button">
+            </button>
+            <button id="micButton" class="hotspot story-mic" type="button" title="说话">说话</button>
+            <button id="speakButton" class="hotspot story-replay" type="button" title="重听">重听</button>
+            <button id="finishButton" class="hotspot story-finish" type="button" title="完成">完成</button>
+            <form id="textForm" class="hidden-form">
+              <input id="textInput" type="text" maxlength="32" placeholder="也可以打字给恐龙" />
+              <button type="submit">发送</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="hatchScreen" class="screen component-page hatch-page">
+          <form id="hatchForm" class="hatch-hotspots">
+            <button id="hatchMicButton" class="hotspot hatch-mic" type="button" title="说出想要的小恐龙">说</button>
+            <input
+              id="hatchPrompt"
+              class="hatch-prompt-input"
+              type="text"
+              maxlength="42"
+              placeholder=""
+              aria-label="说说你想要的小恐龙"
+            />
+            <button class="hotspot hatch-chip chip-blue" type="button" data-hatch-chip="蓝色">蓝色</button>
+            <button class="hotspot hatch-chip chip-sing" type="button" data-hatch-chip="会唱歌">会唱歌</button>
+            <button class="hotspot hatch-chip chip-horn" type="button" data-hatch-chip="长角">长角</button>
+            <button class="hotspot hatch-chip chip-berry" type="button" data-hatch-chip="爱草莓">爱草莓</button>
+            <button id="hatchButton" class="hotspot hatch-submit" type="submit">开始孵化</button>
+            <p id="hatchStatus" class="hatch-status" aria-live="polite"></p>
+          </form>
+        </div>
+
+        <div id="galleryScreen" class="screen component-page gallery-page">
+          <div class="gallery-hotspots">
+            <button id="refreshArtifacts" class="image-button works-refresh" type="button">
+            </button>
+            <div id="artifactList" class="works-live-list" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div id="parentScreen" class="screen component-page parent-page">
+          <div class="parent-hotspots">
+            <label class="visually-hidden" for="themeSelect">主题</label>
+            <select id="themeSelect" class="parent-theme"></select>
+            <label class="visually-hidden" for="dailyLimit">每日分钟</label>
+            <input id="dailyLimit" class="parent-limit" type="number" min="1" max="60" />
+            <label class="parent-toggle parent-safety">
+              <input id="safetyToggle" type="checkbox" checked />
+              <span>防沉迷模式</span>
+            </label>
+            <label class="parent-toggle parent-music">
+              <input id="voiceToggle" type="checkbox" />
+              <span>背景音乐</span>
+            </label>
+            <label class="parent-toggle parent-image">
+              <input id="imageToggle" type="checkbox" />
+              <span>生成卡片</span>
+            </label>
+            <button id="saveSettings" class="image-button parent-save" type="button">
+            </button>
+            <p id="settingsStatus" class="visually-hidden"></p>
+          </div>
+        </div>
+
+        <nav class="bottom-nav" aria-label="主要功能">
+          <canvas id="navCanvas" class="nav-canvas" width="390" height="160" aria-hidden="true"></canvas>
+          <button id="galleryTab" class="nav-button" type="button">
+            <span class="nav-label">作品</span>
+          </button>
+          <button id="hatchTab" class="nav-button active" type="button">
+            <span class="nav-label">孵化</span>
+          </button>
+          <button id="parentTab" class="nav-button" type="button">
+            <span class="nav-label">家长</span>
+          </button>
+        </nav>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

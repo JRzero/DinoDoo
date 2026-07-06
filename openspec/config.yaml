@@ -1,0 +1,27 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+context: |
+  Product: 恐龙咚咚岛, a mobile-first H5 app for 3-year-old children who like cartoon dinosaurs.
+  Goal: Build a small "dinosaur theater" MVP with short story turns, two-choice interaction, parent controls, voice input/output, and end-of-session dino card image generation.
+  Architecture reference: LinkYun-style multi-project workspace and backend layering, simplified to one H5 app plus one API service. Do not build mobile shell, social feed, workspace collaboration, RAG, Edge runtime, or a public Agent marketplace for the MVP.
+  Frontend target: H5 web app, mobile-first. Baby mode must be visual, low-text, and simple; parent mode may expose settings and generated artifacts.
+  Safety: Content is for young children. Keep story turns short, friendly, low-stimulus, nonviolent, and privacy-preserving. All generated text and image prompts must pass safety constraints.
+  AI integration: Frontend must not hold provider API keys. Speech-to-text, text-to-speech, LLM, and image generation are accessed through backend provider abstractions with demo fallbacks.
