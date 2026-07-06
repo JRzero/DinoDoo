@@ -325,27 +325,40 @@ function drawWorksCards(works) {
   const featured = works[0] || {};
   img("worksCardFeatured", { x: 55, y: 246, w: 280, h: 220 });
   img("worksRibbonFeatured", { x: 62, y: 250, w: 120, h: 42 });
-  drawWorkText(featured, 82, 384, 210);
-  img("worksMetaCrown", { x: 136, y: 392, w: 26, h: 26 });
-  img("worksMetaDate", { x: 238, y: 412, w: 76, h: 26 });
-  img("worksMetaPaw", { x: 294, y: 392, w: 30, h: 30 });
+  img(workDinoKey(featured, 0), { x: 142, y: 272, w: 112, h: 116 });
+  drawWorkText(featured, 82, 402, 172, "featured");
+  img("worksMetaCrown", { x: 132, y: 384, w: 24, h: 24 });
+  img("worksMetaDate", { x: 236, y: 418, w: 76, h: 26 });
+  img("worksMetaPaw", { x: 298, y: 384, w: 28, h: 28 });
   [
-    { x: 55, y: 486, icon: "worksMetaHeart", item: works[1] },
-    { x: 200, y: 486, icon: "worksMetaLeaf", item: works[2] },
+    { x: 55, y: 486, icon: "worksMetaHeart", item: works[1], index: 1 },
+    { x: 200, y: 486, icon: "worksMetaLeaf", item: works[2], index: 2 },
   ].forEach((slot) => {
     img("worksCardNormal", { x: slot.x, y: slot.y, w: 135, h: 190 });
     if (slot.item) {
-      drawWorkText(slot.item, slot.x + 14, slot.y + 92, 96);
-      img(slot.icon, { x: slot.x + 72, y: slot.y + 116, w: 26, h: 26 });
+      img(workDinoKey(slot.item, slot.index), { x: slot.x + 44, y: slot.y + 18, w: 58, h: 70 });
+      drawWorkText(slot.item, slot.x + 14, slot.y + 128, 94, "compact");
+      img(slot.icon, { x: slot.x + 96, y: slot.y + 126, w: 24, h: 24 });
     } else {
-      drawWrappedText("\u65b0\u5b75\u5316", slot.x + 63, slot.y + 102, 100, 18, 1, { font: "bold 14px sans-serif", color: "#8a673c" });
+      drawWrappedText("\u65b0\u5b75\u5316", slot.x + 63, slot.y + 128, 100, 18, 1, { font: "bold 14px sans-serif", color: "#8a673c" });
     }
   });
 }
 
-function drawWorkText(item, x, y, maxWidth) {
-  drawWrappedText(item.name || item.title || copy.newDino, x, y, maxWidth, 22, 1, { align: "left", font: "bold 17px sans-serif", color: "#74421c" });
-  drawWrappedText(item.prompt || item.description || copy.hatchDefault, x, y + 24, maxWidth, 18, 1, { align: "left", font: "bold 12px sans-serif", color: "#8a673c" });
+function workDinoKey(item, index) {
+  const text = `${item?.id || ""} ${item?.name || ""} ${item?.title || ""} ${item?.prompt || ""}`;
+  if (text.includes("adai") || text.includes(copy.dinos.adai)) return "dinoAdai";
+  if (text.includes("gulu") || text.includes(copy.dinos.gulu)) return "dinoGulu";
+  return ["dinoXiaobao", "dinoAdai", "dinoGulu"][index % 3] || "dinoXiaobao";
+}
+
+function drawWorkText(item, x, y, maxWidth, density = "normal") {
+  const titleFont = density === "compact" ? "bold 14px sans-serif" : "bold 16px sans-serif";
+  const promptFont = density === "compact" ? "bold 10px sans-serif" : "bold 12px sans-serif";
+  const titleLine = density === "compact" ? 18 : 20;
+  const promptLine = density === "compact" ? 15 : 17;
+  drawWrappedText(item.name || item.title || copy.newDino, x, y, maxWidth, titleLine, 1, { align: "left", font: titleFont, color: "#74421c" });
+  drawWrappedText(item.prompt || item.description || copy.hatchDefault, x, y + titleLine + 2, maxWidth, promptLine, 1, { align: "left", font: promptFont, color: "#8a673c" });
 }
 
 function drawParentScene() {
@@ -598,7 +611,7 @@ function addChip(value) {
 function selectHatchImage() {
   state.eggState = "cracking";
   state.hatchStatus = "imageSelected";
-  $("hatchStatus").textContent = "宸查€夋嫨鍥剧墖";
+  $("hatchStatus").textContent = "\u5df2\u9009\u62e9\u56fe\u7247";
   setAction("hatch:image");
   drawStage();
 }

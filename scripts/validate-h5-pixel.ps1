@@ -152,6 +152,7 @@ Assert-Contains $app "backendItems = options.showBackend ? list : []" "Gallery b
 Assert-Contains $app 'loadArtifacts({ showBackend: true })' "Gallery backend reveal path is missing."
 Assert-Contains $app 'loadArtifacts({ showBackend: false })' "Hatching gallery refresh should keep backend history hidden by default."
 Assert-Contains $app 'localStorage.getItem("dinodoo_hatched_dinos")' "Local hatching persistence is missing."
+Assert-Contains $app "workDinoKey" "Works cards should render independent dinosaur thumbnails in card image slots."
 Assert-Contains $app "hatchStatusImageSelected" "Hatch selected-image status asset is missing from runtime."
 Assert-Contains $app "hatchStatusRecording" "Hatch recording status asset is missing from runtime."
 Assert-Contains $app 'setAction("hatch:image")' "Hatch image button does not expose a testable action."

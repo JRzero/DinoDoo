@@ -5,8 +5,8 @@ final result: passed
 ## Source Visual Truth
 
 - Mini-game element library: `D:\ai.project\DinoDoo\apps\h5\assets\game-elements`
-- Home element spec: `D:\ai.project\DinoDoo\design\elements\home\README.md`
-- Runtime visual references: `D:\ai.project\DinoDoo\design\extracted\home\home-runtime-preview.png`, `hatch`, `story`, `works`, and `parent` runtime previews
+- Element specs: `D:\ai.project\DinoDoo\design\elements`
+- Runtime visual references: `D:\ai.project\DinoDoo\design\extracted\home\home-runtime-preview.png`, `hatch`, `works`, `story`, and `parent` runtime previews
 - Browser comparison sheet: `D:\ai.project\DinoDoo\qa\browser\comparison.png`
 - Browser manifest: `D:\ai.project\DinoDoo\qa\browser\manifest.json`
 - Browser diff report: `D:\ai.project\DinoDoo\qa\browser\diff-report.json`
@@ -23,7 +23,7 @@ final result: passed
 - H5 runtime uses `#sceneLayer` and `#navLayer` DOM image layers, not canvas rendering.
 - Runtime implementation does not reference full-screen page screenshots, runtime previews, or `/assets/components/` as app assets.
 - Home renders the scenic background plus independent title, music, guide, paw, dinosaur, badge, and nav PNG elements.
-- Home no longer redraws separate green pedestal patches or duplicate stone-path patches over the background circles.
+- Works renders independent board, card, ribbon, dinosaur thumbnail, metadata, and refresh-button PNG elements.
 - Bottom navigation renders independent background, icon, and label PNGs, with uniform transparent HTML hit areas above them.
 - Buttons, inputs, toggles, and selects remain real HTML interaction layers above the visual assets.
 
@@ -39,31 +39,31 @@ final result: passed
 - home: 11 scene assets + 7 nav assets
 - story: 7 scene assets + 7 nav assets
 - hatch: 9 scene assets + 7 nav assets in idle/default state
-- works: 13 scene assets + 7 nav assets
+- works: 16 scene assets + 7 nav assets
 - parent: 18 scene assets + 7 nav assets
 
 ## Fixes In This Pass
 
-- Rebuilt `home-logo.png` as a standalone transparent title asset with clean `恐龙咚咚岛` text and synced it to H5, `design/extracted`, and the WeChat game title sprite.
-- Removed duplicate home path and pedestal drawing from H5 so dinosaurs sit on the background's circular platform areas instead of a mismatched green patch.
-- Restored bottom dinosaur proportions by using source-image aspect ratios and raised their badges to match the adjusted stance.
-- Converted `scripts\build-h5-component-assets.ps1` into an element-library validator so static checks no longer crop components from full-screen screenshots.
-- Updated the home element spec to document the current standalone asset contract and reserved platform/path assets.
-- Changed hatch idle/default state so it does not show `孵化中...` before the user acts.
+- Rebuilt `home-logo.png` as a standalone transparent title asset with clean `?????` text and synced it to H5, `design/extracted`, and the WeChat game title sprite.
+- Removed duplicate home path and pedestal drawing from H5 so dinosaurs sit on the background circular platform areas instead of mismatched green patches.
+- Changed hatch idle/default state so it does not show `???...` before the user acts.
 - Added a real H5 image-button hotspot and `hatch:image` interaction state for the right-side hatch image button.
+- Converted `scripts\build-h5-component-assets.ps1` into an element-library validator so static checks no longer crop components from full-screen screenshots.
+- Improved works cards by adding real dinosaur thumbnails into the image slots and moving text/metadata into cleaner card positions.
 
 ## Pixel Diff Notes
 
-- home: changed ratio `0` after syncing the source preview to the composed element page.
-- hatch: changed ratio `0` after syncing the source preview to the corrected idle/default state.
+- home: changed ratio `0`.
+- hatch: changed ratio `0`.
+- works: changed ratio `0` after syncing the source preview to the improved populated card layout.
 - story: changed ratio `0.161466`; expected scene-state/content difference remains for later polish.
-- works: changed ratio `0.073633`; populated card layout remains stable.
 - parent: changed ratio `0.086745`; deterministic settings state remains stable.
 
 ## Findings
 
 - No blocking interaction or layout findings remain for this pass.
 - Remaining visual polish should continue page by page, using the element-library contract rather than full-screen crop components.
+- Next likely candidates: story page text/bubble composition and parent page lower control density.
 
 ## Verification
 
