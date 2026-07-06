@@ -40,12 +40,13 @@ async function main() {
 
     await page.goto(`${baseUrl}/#home`, { waitUntil: "networkidle" });
     await waitForRoute(page, "home");
-    await expectCanvasLayers(page);
+    await expectAssetLayers(page, { route: "home", minSceneAssets: 12 });
     const navHome = await navMetrics(page);
 
     await page.locator("#hatchTab").click();
     await waitForRoute(page, "hatch");
     await expectHash(page, "#hatch");
+    await expectAssetLayers(page, { route: "hatch", minSceneAssets: 9 });
     const navHatch = await navMetrics(page);
 
     await page.goBack({ waitUntil: "networkidle" });
@@ -55,11 +56,13 @@ async function main() {
     await page.locator("#galleryTab").click();
     await waitForRoute(page, "works");
     await expectHash(page, "#works");
+    await expectAssetLayers(page, { route: "works", minSceneAssets: 4 });
     const navWorks = await navMetrics(page);
 
     await page.locator("#parentTab").click();
     await waitForRoute(page, "parent");
     await expectHash(page, "#parent");
+    await expectAssetLayers(page, { route: "parent", minSceneAssets: 15 });
     const navParent = await navMetrics(page);
 
     assertConsistentNav([navHome, navHatch, navWorks, navParent]);
@@ -70,6 +73,7 @@ async function main() {
     await waitForRoute(page, "story");
     await expectHash(page, "#story");
     await expectLastAction(page, "home:dino:adai");
+    await expectAssetLayers(page, { route: "story", minSceneAssets: 6 });
 
     await page.locator("#choiceA").click();
     await expectLastAction(page, "story:choice-a");
@@ -87,20 +91,21 @@ async function main() {
 
     await page.locator("#hatchTab").click();
     await waitForRoute(page, "hatch");
-    const hatchCanvasBefore = await sceneCanvasSignature(page);
-    await page.locator("#hatchPrompt").fill("蓝色 会唱歌");
-    await page.locator('[data-hatch-chip="长角"]').click();
-    await expectLastAction(page, "hatch:chip:长角");
-    await expectSceneCanvasChanged(page, hatchCanvasBefore, "hatch prompt did not redraw the canvas");
+    const hatchLayerBefore = await sceneLayerSignature(page);
+    await page.locator("#hatchPrompt").fill("\u84dd\u8272 \u4f1a\u5531\u6b4c");
+    const horn = "\u957f\u89d2";
+    await page.locator(`[data-hatch-chip="${horn}"]`).click();
+    await expectLastAction(page, `hatch:chip:${horn}`);
+    await expectSceneLayerChanged(page, hatchLayerBefore, "hatch prompt did not recompose the element asset layer");
     const promptValue = await page.locator("#hatchPrompt").inputValue();
-    if (!promptValue.includes("长角")) {
+    if (!promptValue.includes(horn)) {
       throw new Error(`Hatch chip did not update prompt input: ${promptValue}`);
     }
     await page.locator("#hatchButton").click();
     await waitForRoute(page, "works");
     await expectHash(page, "#works");
     await expectLastAction(page, "hatch:submit");
-    await page.waitForFunction(() => document.querySelector("#artifactList")?.textContent?.includes("小恐龙"));
+    await page.waitForFunction(() => document.querySelector("#artifactList")?.textContent?.includes("\u65b0\u5c0f\u6050\u9f99"));
 
     await page.locator("#refreshArtifacts").click();
     await expectLastAction(page, "works:refresh");
@@ -108,13 +113,13 @@ async function main() {
     await page.locator("#parentTab").click();
     await waitForRoute(page, "parent");
     await page.locator("#dailyLimit").fill("30");
-    const parentCanvasBefore = await sceneCanvasSignature(page);
+    const parentLayerBefore = await sceneLayerSignature(page);
     await page.locator("#voiceToggle").click({ force: true });
-    await expectSceneCanvasChanged(page, parentCanvasBefore, "parent toggle did not redraw the canvas");
+    await expectSceneLayerChanged(page, parentLayerBefore, "parent toggle did not recompose the element asset layer");
     await page.locator("#imageToggle").click({ force: true });
     await page.locator("#saveSettings").click();
     await expectLastAction(page, "parent:save");
-    await page.waitForFunction(() => document.querySelector("#settingsStatus")?.textContent === "已保存");
+    await page.waitForFunction(() => document.querySelector("#settingsStatus")?.textContent === "\u5df2\u4fdd\u5b58");
 
     console.log("H5 Playwright interaction regression passed.");
   } finally {
@@ -126,7 +131,15 @@ async function waitForRoute(page, route) {
   await page.waitForFunction(
     ({ route, screenId }) => {
       const active = document.querySelector(".screen.active");
-      return document.body.dataset.route === route && active?.id === screenId;
+      const sceneAssets = document.querySelectorAll("#sceneLayer img[data-asset]").length;
+      const navAssets = document.querySelectorAll("#navLayer img[data-asset]").length;
+      return (
+        document.body.dataset.route === route &&
+        document.body.dataset.imagesReady === "true" &&
+        active?.id === screenId &&
+        sceneAssets > 0 &&
+        navAssets >= 7
+      );
     },
     { route, screenId: expectedScreens[route] },
     { timeout: 8000 },
@@ -148,32 +161,58 @@ async function expectLastAction(page, expectedAction) {
   );
 }
 
-async function expectCanvasLayers(page) {
+async function expectAssetLayers(page, { route, minSceneAssets }) {
   const layers = await page.evaluate(() => {
-    const scene = document.querySelector("#sceneCanvas");
-    const nav = document.querySelector("#navCanvas");
+    const scene = document.querySelector("#sceneLayer");
+    const nav = document.querySelector("#navLayer");
     return {
-      sceneWidth: scene?.width || 0,
-      sceneHeight: scene?.height || 0,
-      navWidth: nav?.width || 0,
-      navHeight: nav?.height || 0,
-      canvasMode: document.body.classList.contains("canvas-mode"),
+      sceneExists: Boolean(scene),
+      navExists: Boolean(nav),
+      sceneAssetCount: document.querySelectorAll("#sceneLayer img[data-asset]").length,
+      navAssetCount: document.querySelectorAll("#navLayer img[data-asset]").length,
+      sceneCanvasExists: Boolean(document.querySelector("#sceneCanvas")),
+      navCanvasExists: Boolean(document.querySelector("#navCanvas")),
+      assetMode: document.body.classList.contains("asset-mode"),
+      imagesReady: document.body.dataset.imagesReady === "true",
+      sceneAssetNames: Array.from(document.querySelectorAll("#sceneLayer img[data-asset]")).map((el) => el.dataset.asset),
+      navAssetNames: Array.from(document.querySelectorAll("#navLayer img[data-asset]")).map((el) => el.dataset.asset),
     };
   });
-  if (!layers.canvasMode || layers.sceneWidth <= 0 || layers.sceneHeight <= 0 || layers.navWidth <= 0 || layers.navHeight <= 0) {
-    throw new Error(`Canvas layers are not active: ${JSON.stringify(layers)}`);
+  if (!layers.sceneExists || !layers.navExists || layers.sceneCanvasExists || layers.navCanvasExists || !layers.assetMode || !layers.imagesReady) {
+    throw new Error(`Element asset layers are not active for ${route}: ${JSON.stringify(layers)}`);
+  }
+  if (layers.sceneAssetCount < minSceneAssets || layers.navAssetCount < 7) {
+    throw new Error(`Too few element assets for ${route}: ${JSON.stringify(layers)}`);
   }
 }
 
-async function sceneCanvasSignature(page) {
-  return page.locator("#sceneCanvas").evaluate((canvas) => canvas.toDataURL("image/png"));
+async function sceneLayerSignature(page) {
+  return page.locator("#sceneLayer").evaluate((layer) =>
+    Array.from(layer.querySelectorAll("img[data-asset], .scene-text"))
+      .map((el) => {
+        if (el instanceof HTMLImageElement) {
+          return `img:${el.dataset.asset}:${el.getAttribute("style")}`;
+        }
+        return `text:${el.textContent}:${el.getAttribute("style")}`;
+      })
+      .join("|"),
+  );
 }
 
-async function expectSceneCanvasChanged(page, before, message) {
+async function expectSceneLayerChanged(page, before, message) {
   await page
-    .waitForFunction((before) => document.querySelector("#sceneCanvas")?.toDataURL("image/png") !== before, before, {
-      timeout: 3000,
-    })
+    .waitForFunction((before) => {
+      const layer = document.querySelector("#sceneLayer");
+      const current = Array.from(layer?.querySelectorAll("img[data-asset], .scene-text") || [])
+        .map((el) => {
+          if (el instanceof HTMLImageElement) {
+            return `img:${el.dataset.asset}:${el.getAttribute("style")}`;
+          }
+          return `text:${el.textContent}:${el.getAttribute("style")}`;
+        })
+        .join("|");
+      return current !== before;
+    }, before, { timeout: 3000 })
     .catch(() => {
       throw new Error(message);
     });

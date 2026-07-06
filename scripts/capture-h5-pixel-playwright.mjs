@@ -52,13 +52,18 @@ async function main() {
           const app = document.querySelector("#app");
           const box = app?.getBoundingClientRect();
           const imagesReady = Array.from(document.images).every((img) => img.complete && img.naturalWidth > 0);
+          const sceneAssets = document.querySelectorAll("#sceneLayer img[data-asset]").length;
+          const navAssets = document.querySelectorAll("#navLayer img[data-asset]").length;
           return (
             active?.id === screenId &&
             document.body.classList.contains(bodyMode) &&
+            document.body.dataset.imagesReady === "true" &&
             box &&
             Math.abs(box.width - 390) <= 0.5 &&
             Math.abs(box.height - 844) <= 0.5 &&
-            imagesReady
+            imagesReady &&
+            sceneAssets > 0 &&
+            navAssets >= 7
           );
         },
         { screenId: state.screenId, bodyMode: state.bodyMode },
@@ -72,6 +77,9 @@ async function main() {
           bodyClass: document.body.className,
           devicePixelRatio: window.devicePixelRatio,
           activeScreenId: document.querySelector(".screen.active")?.id || null,
+          sceneAssetCount: document.querySelectorAll("#sceneLayer img[data-asset]").length,
+          navAssetCount: document.querySelectorAll("#navLayer img[data-asset]").length,
+          sceneAssetNames: Array.from(document.querySelectorAll("#sceneLayer img[data-asset]")).map((el) => el.dataset.asset),
           shell: box
             ? {
                 x: Math.round(box.x * 1000) / 1000,

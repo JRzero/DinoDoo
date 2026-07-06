@@ -32,8 +32,7 @@ const copy = {
   noWorks: "\u53bb\u5b75\u5316\u4e00\u53ea\u5c0f\u6050\u9f99\u5427",
 };
 
-const canvasSources = {
-  nav: "/assets/nav-strip.png",
+const assetSources = {
   bgHome: `${GE}/backgrounds/home-clean.png`,
   bgStory: `${GE}/backgrounds/story-clean.png`,
   bgHatch: `${GE}/backgrounds/hatch-clean.png`,
@@ -115,12 +114,9 @@ const screenRoutes = {
   parent: ["parentTab", "parentScreen"],
 };
 
-const canvasStage = {
+const stage = {
   scene: null,
-  sceneCtx: null,
   nav: null,
-  navCtx: null,
-  assets: {},
   ready: false,
 };
 
@@ -162,8 +158,8 @@ function showScreen(route) {
   const entry = screenRoutes[route] || screenRoutes.home;
   state.route = route in screenRoutes ? route : "home";
   document.body.dataset.route = state.route;
-  document.body.classList.remove("home-mode", "pixel-mode", "canvas-mode");
-  document.body.classList.add("canvas-mode");
+  document.body.classList.remove("home-mode", "pixel-mode", "asset-mode");
+  document.body.classList.add("asset-mode");
   document.body.classList.add(state.route === "home" ? "home-mode" : "pixel-mode");
   document.querySelectorAll(".screen").forEach((el) => el.classList.remove("active"));
   $(entry[1])?.classList.add("active");
@@ -195,28 +191,53 @@ function loadImage(src) {
   });
 }
 
-async function loadCanvasAssets() {
-  const loaded = await Promise.all(Object.entries(canvasSources).map(async ([key, src]) => [key, await loadImage(src)]));
-  canvasStage.assets = Object.fromEntries(loaded);
-  canvasStage.ready = true;
+async function loadAssetImages() {
+  await Promise.all(Object.values(assetSources).map(loadImage));
+  stage.ready = true;
   document.body.dataset.imagesReady = "true";
-  drawNavCanvas();
+  drawNavLayer();
   drawStage();
 }
 
-function img(key, rect) {
-  const source = canvasStage.assets[key];
-  if (source) canvasStage.sceneCtx.drawImage(source, rect.x, rect.y, rect.w, rect.h);
+function applySlot(el, rect) {
+  el.style.left = `${rect.x}px`;
+  el.style.top = `${rect.y}px`;
+  el.style.width = `${rect.w}px`;
+  el.style.height = `${rect.h}px`;
+}
+
+function img(key, rect, options = {}) {
+  const source = assetSources[key];
+  if (!source || !stage.scene) return null;
+  const el = document.createElement("img");
+  el.className = ["scene-art", options.className].filter(Boolean).join(" ");
+  el.dataset.asset = key;
+  el.src = source;
+  el.alt = "";
+  el.draggable = false;
+  applySlot(el, rect);
+  if (options.zIndex) el.style.zIndex = String(options.zIndex);
+  stage.scene.appendChild(el);
+  return el;
 }
 
 function navImg(key, rect) {
-  const source = canvasStage.assets[key];
-  if (source) canvasStage.navCtx.drawImage(source, rect.x, rect.y, rect.w, rect.h);
+  const source = assetSources[key];
+  if (!source || !stage.nav) return null;
+  const el = document.createElement("img");
+  el.className = "nav-art-img";
+  el.dataset.asset = key;
+  el.src = source;
+  el.alt = "";
+  el.draggable = false;
+  applySlot(el, rect);
+  stage.nav.appendChild(el);
+  return el;
 }
 
 function drawStage() {
-  if (!canvasStage.ready || !canvasStage.sceneCtx) return;
-  canvasStage.sceneCtx.clearRect(0, 0, 390, 684);
+  if (!stage.ready || !stage.scene) return;
+  stage.scene.replaceChildren();
   if (state.route === "home") drawHomeScene();
   if (state.route === "story") drawStoryScene();
   if (state.route === "hatch") drawHatchScene();
@@ -224,20 +245,20 @@ function drawStage() {
   if (state.route === "parent") drawParentScene();
 }
 
-function drawNavCanvas() {
-  if (!canvasStage.ready || !canvasStage.navCtx) return;
-  canvasStage.navCtx.clearRect(0, 0, 390, 160);
+function drawNavLayer() {
+  if (!stage.ready || !stage.nav) return;
+  stage.nav.replaceChildren();
   navImg("navBg", { x: 0, y: 0, w: 390, h: 160 });
-  navImg("navWorks", { x: 43, y: 18, w: 60, h: 58 });
-  navImg("navHatch", { x: 152, y: 2, w: 86, h: 96 });
-  navImg("navParent", { x: 295, y: 18, w: 68, h: 58 });
+  navImg("navWorks", { x: 43, y: 22, w: 60, h: 58 });
+  navImg("navHatch", { x: 152, y: 8, w: 86, h: 96 });
+  navImg("navParent", { x: 295, y: 22, w: 68, h: 58 });
   navImg("navLabelWorks", { x: 37, y: 108, w: 88, h: 38 });
   navImg("navLabelHatch", { x: 151, y: 108, w: 88, h: 38 });
   navImg("navLabelParent", { x: 296, y: 108, w: 88, h: 38 });
 }
 
 function drawHomeScene() {
-  img("bgHome", { x: 0, y: 0, w: 390, h: 684 });
+  img("bgHome", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
   img("homeLogo", { x: 20, y: 30, w: 350, h: 145 });
   img("homeMusic", { x: 335, y: 34, w: 54, h: 54 });
   img("homeGuide", { x: 45, y: 198, w: 300, h: 36 });
@@ -255,7 +276,7 @@ function drawHomeScene() {
 }
 
 function drawStoryScene() {
-  img("bgStory", { x: 0, y: 0, w: 390, h: 684 });
+  img("bgStory", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
   img("storyTitle", { x: 50, y: 38, w: 290, h: 92 });
   img("storyBubble", { x: 36, y: 178, w: 180, h: 120 });
   img(dinoKey(state.selectedDino), { x: 150, y: 157, w: 190, h: 296 });
@@ -266,47 +287,45 @@ function drawStoryScene() {
 }
 
 function drawHatchScene() {
-  img("bgHatch", { x: 0, y: 0, w: 390, h: 684 });
-  img(eggKey(), { x: 85, y: 124, w: 220, h: 254 });
-  img(statusKey(), { x: 85, y: 444, w: 220, h: 44 });
-  img("hatchInputPanel", { x: 35, y: 500, w: 320, h: 154 });
-  const prompt = $("hatchPrompt")?.value?.trim() || copy.hatchDefault;
-  drawWrappedText(prompt, 195, 528, 250, 20, 1, { font: "bold 17px sans-serif", color: "#75471f" });
-  img("hatchChipBlue", { x: 52, y: 552, w: 86, h: 42 });
-  img("hatchChipSing", { x: 140, y: 552, w: 86, h: 42 });
-  img("hatchChipHorn", { x: 244, y: 552, w: 86, h: 42 });
-  img("hatchButtonVoice", { x: 52, y: 612, w: 78, h: 48 });
-  img("hatchButtonImage", { x: 260, y: 612, w: 78, h: 48 });
-  img("hatchButtonStart", { x: 114, y: 608, w: 162, h: 54 });
+  img("bgHatch", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
+  img(eggKey(), { x: 65, y: 108, w: 260, h: 300 });
+  img(statusKey(), { x: 85, y: 488, w: 220, h: 44 });
+  img("hatchInputPanel", { x: 35, y: 542, w: 320, h: 160 });
+  img("hatchChipBlue", { x: 52, y: 575, w: 86, h: 42 });
+  img("hatchChipSing", { x: 140, y: 575, w: 86, h: 42 });
+  img("hatchChipHorn", { x: 244, y: 575, w: 86, h: 42 });
+  img("hatchButtonVoice", { x: 52, y: 628, w: 78, h: 48 });
+  img("hatchButtonImage", { x: 260, y: 628, w: 78, h: 48 });
+  img("hatchButtonStart", { x: 114, y: 626, w: 162, h: 52 });
 }
 
 function drawWorksScene() {
-  img("bgWorks", { x: 0, y: 0, w: 390, h: 684 });
-  img("worksTitle", { x: 50, y: 132, w: 290, h: 86 });
-  img("worksBoard", { x: 48, y: 224, w: 294, h: 416 });
+  img("bgWorks", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
+  img("worksTitle", { x: 50, y: 128, w: 290, h: 92 });
+  img("worksBoard", { x: 40, y: 216, w: 310, h: 468 });
   const works = state.artifacts.length ? state.artifacts : state.hatchedDinos;
   if (!works.length) {
-    img("worksEmpty", { x: 70, y: 326, w: 250, h: 136 });
+    img("worksEmpty", { x: 70, y: 330, w: 250, h: 150 });
     drawWrappedText(copy.noWorks, 195, 416, 210, 20, 1, { font: "bold 15px sans-serif", color: "#8a673c" });
   } else {
     drawWorksCards(works.slice(0, 3));
   }
-  img("worksRefresh", { x: 126, y: 616, w: 138, h: 48 });
+  img("worksRefresh", { x: 126, y: 636, w: 138, h: 48 });
 }
 
 function drawWorksCards(works) {
   const featured = works[0] || {};
-  img("worksCardFeatured", { x: 62, y: 246, w: 266, h: 174 });
-  img("worksRibbonFeatured", { x: 68, y: 250, w: 112, h: 38 });
-  drawWorkText(featured, 82, 362, 205);
-  img("worksMetaCrown", { x: 136, y: 370, w: 26, h: 26 });
-  img("worksMetaDate", { x: 238, y: 390, w: 76, h: 26 });
-  img("worksMetaPaw", { x: 294, y: 370, w: 30, h: 30 });
+  img("worksCardFeatured", { x: 55, y: 246, w: 280, h: 220 });
+  img("worksRibbonFeatured", { x: 62, y: 250, w: 120, h: 42 });
+  drawWorkText(featured, 82, 384, 210);
+  img("worksMetaCrown", { x: 136, y: 392, w: 26, h: 26 });
+  img("worksMetaDate", { x: 238, y: 412, w: 76, h: 26 });
+  img("worksMetaPaw", { x: 294, y: 392, w: 30, h: 30 });
   [
-    { x: 62, y: 430, icon: "worksMetaHeart", item: works[1] },
-    { x: 202, y: 430, icon: "worksMetaLeaf", item: works[2] },
+    { x: 55, y: 486, icon: "worksMetaHeart", item: works[1] },
+    { x: 200, y: 486, icon: "worksMetaLeaf", item: works[2] },
   ].forEach((slot) => {
-    img("worksCardNormal", { x: slot.x, y: slot.y, w: 126, h: 164 });
+    img("worksCardNormal", { x: slot.x, y: slot.y, w: 135, h: 190 });
     if (slot.item) {
       drawWorkText(slot.item, slot.x + 14, slot.y + 92, 96);
       img(slot.icon, { x: slot.x + 72, y: slot.y + 116, w: 26, h: 26 });
@@ -322,15 +341,15 @@ function drawWorkText(item, x, y, maxWidth) {
 }
 
 function drawParentScene() {
-  img("bgParent", { x: 0, y: 0, w: 390, h: 684 });
-  img("parentTitle", { x: 50, y: 132, w: 290, h: 86 });
-  img("parentBoard", { x: 38, y: 224, w: 314, h: 430 });
-  img("parentRowSound", { x: 55, y: 244, w: 280, h: 66 });
-  img("parentRowImage", { x: 55, y: 316, w: 280, h: 66 });
-  img("parentRowMusic", { x: 55, y: 388, w: 280, h: 66 });
-  img(toggleKey("voiceEnabled"), { x: 248, y: 258, w: 72, h: 40 });
-  img(toggleKey("imageEnabled"), { x: 248, y: 330, w: 72, h: 40 });
-  img(toggleKey("musicEnabled"), { x: 248, y: 402, w: 72, h: 40 });
+  img("bgParent", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
+  img("parentTitle", { x: 50, y: 128, w: 290, h: 92 });
+  img("parentBoard", { x: 38, y: 216, w: 314, h: 468 });
+  img("parentRowSound", { x: 55, y: 250, w: 280, h: 72 });
+  img("parentRowImage", { x: 55, y: 330, w: 280, h: 72 });
+  img("parentRowMusic", { x: 55, y: 410, w: 280, h: 72 });
+  img(toggleKey("voiceEnabled"), { x: 248, y: 266, w: 72, h: 40 });
+  img(toggleKey("imageEnabled"), { x: 248, y: 346, w: 72, h: 40 });
+  img(toggleKey("musicEnabled"), { x: 248, y: 426, w: 72, h: 40 });
   img("parentSlider", { x: 78, y: 462, w: 190, h: 36 });
   img("parentTime30", { x: 268, y: 460, w: 70, h: 40 });
   img("parentThemeIsland", { x: 70, y: 502, w: 58, h: 34 });
@@ -339,7 +358,7 @@ function drawParentScene() {
   img("parentThemeDesert", { x: 256, y: 502, w: 58, h: 34 });
   img("parentVoicePermission", { x: 52, y: 546, w: 140, h: 50 });
   img("parentImagePermission", { x: 198, y: 546, w: 140, h: 50 });
-  img("parentSave", { x: 82, y: 606, w: 225, h: 54 });
+  img("parentSave", { x: 82, y: 600, w: 225, h: 58 });
   if (state.parentSaved) img("parentToastSaved", { x: 115, y: 548, w: 160, h: 44 });
 }
 
@@ -360,26 +379,21 @@ function toggleKey(settingKey) {
 }
 
 function drawWrappedText(text, x, y, maxWidth, lineHeight, maxLines, options = {}) {
-  const ctx = canvasStage.sceneCtx;
-  ctx.save();
-  ctx.fillStyle = options.color || "#68421f";
-  ctx.font = options.font || "bold 18px sans-serif";
-  ctx.textAlign = options.align || "center";
-  const chars = Array.from(String(text || ""));
-  let line = "";
-  let count = 0;
-  chars.forEach((char) => {
-    const next = line + char;
-    if (ctx.measureText(next).width > maxWidth && line) {
-      if (count < maxLines) ctx.fillText(line, x, y + count * lineHeight);
-      count += 1;
-      line = char;
-    } else {
-      line = next;
-    }
-  });
-  if (line && count < maxLines) ctx.fillText(line, x, y + count * lineHeight);
-  ctx.restore();
+  if (!stage.scene) return;
+  const align = options.align || "center";
+  const el = document.createElement("p");
+  el.className = "scene-text";
+  el.textContent = String(text || "");
+  el.style.left = `${align === "left" ? x : x - maxWidth / 2}px`;
+  el.style.top = `${y - lineHeight}px`;
+  el.style.width = `${maxWidth}px`;
+  el.style.maxHeight = `${lineHeight * maxLines}px`;
+  el.style.lineHeight = `${lineHeight}px`;
+  el.style.font = options.font || "bold 18px sans-serif";
+  el.style.color = options.color || "#68421f";
+  el.style.textAlign = align;
+  el.style.webkitLineClamp = String(maxLines);
+  stage.scene.appendChild(el);
 }
 
 async function loadSession() {
@@ -636,14 +650,12 @@ function bindEvents() {
 }
 
 async function init() {
-  canvasStage.scene = $("sceneCanvas");
-  canvasStage.sceneCtx = canvasStage.scene.getContext("2d");
-  canvasStage.nav = $("navCanvas");
-  canvasStage.navCtx = canvasStage.nav.getContext("2d");
-  document.body.classList.add("home-mode", "canvas-mode");
+  stage.scene = $("sceneLayer");
+  stage.nav = $("navLayer");
+  document.body.classList.add("home-mode", "asset-mode");
   bindEvents();
   loadLocalHatched();
-  await Promise.all([loadSession(), loadDinos(), loadSettings(), loadCanvasAssets()]);
+  await Promise.all([loadSession(), loadDinos(), loadSettings(), loadAssetImages()]);
   await loadArtifacts({ showBackend: false });
   applyRouteFromHash();
 }

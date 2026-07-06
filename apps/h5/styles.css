@@ -47,7 +47,7 @@ button {
   transform-origin: top center;
 }
 
-.scene-canvas {
+.scene-layer {
   position: absolute;
   left: 0;
   top: 0;
@@ -59,6 +59,30 @@ button {
   user-select: none;
 }
 
+.scene-art,
+.nav-art-img {
+  position: absolute;
+  display: block;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+.scene-bg {
+  z-index: 0;
+}
+
+.scene-text {
+  position: absolute;
+  z-index: 5;
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  pointer-events: none;
+  text-shadow: 0 1px 0 rgba(255, 246, 211, 0.75);
+  white-space: normal;
+}
 .screen {
   position: absolute;
   left: 0;
@@ -83,8 +107,8 @@ button {
   background: transparent;
 }
 
-body.canvas-mode .component-scene,
-body.canvas-mode .component-page {
+body.asset-mode .component-scene,
+body.asset-mode .component-page {
   background: transparent;
 }
 
@@ -361,7 +385,7 @@ body.canvas-mode .component-page {
   background: transparent;
 }
 
-.nav-canvas {
+.nav-art {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -417,20 +441,20 @@ body.canvas-mode .component-page {
 .story-mic { left: 44px; top: 472px; width: 62px; height: 66px; }
 .story-replay { left: 106px; top: 472px; width: 62px; height: 66px; }
 .story-finish { left: 168px; top: 472px; width: 64px; height: 66px; }
-.hatch-prompt-input { left: 70px; top: 508px; width: 250px; height: 38px; }
-.hatch-mic { left: 52px; top: 612px; width: 78px; height: 48px; }
-.hatch-chip { top: 552px; width: 86px; height: 42px; }
+.hatch-prompt-input { left: 78px; top: 548px; width: 234px; height: 26px; font-size: 14px; }
+.hatch-mic { left: 52px; top: 628px; width: 78px; height: 48px; }
+.hatch-chip { top: 575px; width: 86px; height: 42px; }
 .chip-blue { left: 52px; }
 .chip-sing { left: 140px; }
 .chip-horn { left: 244px; }
 .chip-berry { display: none; pointer-events: none; }
-.hatch-submit { left: 114px; top: 608px; width: 162px; height: 54px; }
-.works-refresh { left: 126px; top: 616px; width: 138px; height: 48px; }
-.works-live-list { left: 62px; top: 246px; width: 266px; min-height: 174px; opacity: 0; }
-.parent-theme { left: 70px; top: 502px; width: 244px; height: 34px; }
+.hatch-submit { left: 114px; top: 626px; width: 162px; height: 52px; }
+.works-refresh { left: 126px; top: 636px; width: 138px; height: 48px; }
+.works-live-list { left: 55px; top: 246px; width: 280px; min-height: 220px; opacity: 0; }
+.parent-theme { left: 70px; top: 505px; width: 250px; height: 34px; }
 .parent-limit { left: 78px; top: 462px; width: 260px; height: 36px; }
 .parent-toggle { width: 72px; height: 40px; }
-.parent-safety { left: 248px; top: 258px; }
-.parent-music { left: 248px; top: 402px; }
-.parent-image { left: 248px; top: 330px; }
-.parent-save { left: 82px; top: 606px; width: 225px; height: 54px; }
+.parent-safety { left: 248px; top: 266px; }
+.parent-music { left: 248px; top: 426px; }
+.parent-image { left: 248px; top: 346px; }
+.parent-save { left: 82px; top: 600px; width: 225px; height: 58px; }

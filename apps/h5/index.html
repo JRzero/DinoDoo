@@ -9,7 +9,7 @@
   <body>
     <main id="app" class="shell">
       <section class="play" aria-live="polite">
-        <canvas id="sceneCanvas" class="scene-canvas" width="390" height="684" aria-hidden="true"></canvas>
+        <div id="sceneLayer" class="scene-layer" aria-hidden="true"></div>
 
         <div id="homeScreen" class="screen active">
           <div class="component-scene home-scene">
@@ -44,7 +44,7 @@
         <div id="hatchScreen" class="screen component-page hatch-page">
           <form id="hatchForm" class="hatch-hotspots">
             <button id="hatchMicButton" class="hotspot hatch-mic" type="button">&#35828;</button>
-            <input id="hatchPrompt" class="hatch-prompt-input" type="text" maxlength="42" placeholder="" aria-label="&#35828;&#35828;&#20320;&#24819;&#35201;&#30340;&#23567;&#24656;&#40857;" />
+            <input id="hatchPrompt" class="hatch-prompt-input" type="text" maxlength="42" placeholder="&#35828;&#35828;&#20320;&#24819;&#35201;&#30340;&#23567;&#24656;&#40857;..." aria-label="&#35828;&#35828;&#20320;&#24819;&#35201;&#30340;&#23567;&#24656;&#40857;" />
             <button class="hotspot hatch-chip chip-blue" type="button" data-hatch-chip="&#34013;&#33394;">&#34013;&#33394;</button>
             <button class="hotspot hatch-chip chip-sing" type="button" data-hatch-chip="&#20250;&#21809;&#27468;">&#20250;&#21809;&#27468;</button>
             <button class="hotspot hatch-chip chip-horn" type="button" data-hatch-chip="&#38271;&#35282;">&#38271;&#35282;</button>
@@ -76,7 +76,7 @@
         </div>
 
         <nav class="bottom-nav" aria-label="&#20027;&#35201;&#21151;&#33021;">
-          <canvas id="navCanvas" class="nav-canvas" width="390" height="160" aria-hidden="true"></canvas>
+          <div id="navLayer" class="nav-art" aria-hidden="true"></div>
           <button id="galleryTab" class="nav-button" type="button"><span class="nav-label">&#20316;&#21697;</span></button>
           <button id="hatchTab" class="nav-button active" type="button"><span class="nav-label">&#x5B75;&#x5316;</span></button>
           <button id="parentTab" class="nav-button" type="button"><span class="nav-label">&#23478;&#38271;</span></button>

@@ -51,6 +51,15 @@ foreach ($state in $manifest.states) {
   if (-not [string]::IsNullOrWhiteSpace($state.expectedBodyMode) -and $state.runtime.bodyClass -notmatch "(^|\s)$([regex]::Escape($state.expectedBodyMode))(\s|$)") {
     throw "Unexpected body mode for $($state.name): '$($state.runtime.bodyClass)', expected to include '$($state.expectedBodyMode)'."
   }
+  if ($state.runtime.bodyClass -notmatch "(^|\s)asset-mode(\s|$)") {
+    throw "Browser QA state $($state.name) is not using asset composition mode: '$($state.runtime.bodyClass)'."
+  }
+  if ($state.runtime.sceneAssetCount -lt 1) {
+    throw "Browser QA state $($state.name) has no scene element assets."
+  }
+  if ($state.runtime.navAssetCount -lt 7) {
+    throw "Browser QA state $($state.name) has incomplete nav element assets: $($state.runtime.navAssetCount)."
+  }
   if ([Math]::Abs($state.runtime.shell.width - 390) -gt 0.5 -or [Math]::Abs($state.runtime.shell.height - 844) -gt 0.5) {
     throw "Unexpected runtime shell size for $($state.name): $($state.runtime.shell.width)x$($state.runtime.shell.height), expected 390x844."
   }

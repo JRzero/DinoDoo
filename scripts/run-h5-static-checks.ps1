@@ -1,6 +1,13 @@
 $ErrorActionPreference = "Stop"
 
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
+$qaUrl = if ($env:DINODOO_QA_URL) { $env:DINODOO_QA_URL.TrimEnd("/") } else { "http://localhost:8080" }
+
+function Assert-LastExit($name) {
+  if ($LASTEXITCODE -ne 0) {
+    throw "$name failed with exit code $LASTEXITCODE"
+  }
+}
 
 function Step($name, $scriptBlock) {
   Write-Output ""
@@ -17,6 +24,7 @@ function Invoke-OpenSpecValidate($changeId) {
     throw "openspec command not found. Expected openspec.cmd on PATH or at $commandPath"
   }
   & $commandPath validate $changeId --strict
+  Assert-LastExit "openspec validate $changeId"
 }
 
 Step "H5 component asset build" {
@@ -31,6 +39,7 @@ Step "H5 app JavaScript syntax" {
   Push-Location $root
   try {
     node --check apps\h5\app.js
+    Assert-LastExit "node --check apps\h5\app.js"
   } finally {
     Pop-Location
   }
@@ -40,7 +49,9 @@ Step "Playwright capture script syntax" {
   Push-Location $root
   try {
     node --check scripts\capture-h5-pixel-playwright.mjs
+    Assert-LastExit "node --check scripts\capture-h5-pixel-playwright.mjs"
     node --check scripts\verify-h5-interactions-playwright.mjs
+    Assert-LastExit "node --check scripts\verify-h5-interactions-playwright.mjs"
   } finally {
     Pop-Location
   }
@@ -50,6 +61,7 @@ Step "Backend Go tests" {
   Push-Location (Join-Path $root "server")
   try {
     go test ./...
+    Assert-LastExit "go test ./..."
   } finally {
     Pop-Location
   }
@@ -74,8 +86,14 @@ Step "OpenSpec voice/image MVP change" {
 }
 
 Step "Local service health" {
-  $health = Invoke-RestMethod http://localhost:8080/health
-  if ($health.status -ne "ok") {
+  $health = Invoke-RestMethod "$qaUrl/health"
+  $isOk = $false
+  if ($health -is [string]) {
+    $isOk = $health.Trim().ToLowerInvariant() -eq "ok"
+  } elseif ($null -ne $health.status) {
+    $isOk = $health.status -eq "ok"
+  }
+  if (-not $isOk) {
     throw "Unexpected health response: $($health | ConvertTo-Json -Compress)"
   }
   Write-Output "health ok"
@@ -83,7 +101,7 @@ Step "Local service health" {
 
 Step "QA hash URLs" {
   @("/#home", "/#story", "/#hatch", "/#works", "/#parent") | ForEach-Object {
-    $res = Invoke-WebRequest -Uri "http://localhost:8080$_" -UseBasicParsing
+    $res = Invoke-WebRequest -Uri "$qaUrl$_" -UseBasicParsing
     if ($res.StatusCode -ne 200) {
       throw "Unexpected HTTP status for ${_}: $($res.StatusCode)"
     }
@@ -100,6 +118,7 @@ Step "H5 browser interaction regression" {
       $env:DINODOO_PLAYWRIGHT_NODE_MODULES = $localPlaywrightModules
     }
     node scripts\verify-h5-interactions-playwright.mjs
+    Assert-LastExit "node scripts\verify-h5-interactions-playwright.mjs"
   } finally {
     $env:DINODOO_PLAYWRIGHT_NODE_MODULES = $oldPlaywrightModules
     Pop-Location
