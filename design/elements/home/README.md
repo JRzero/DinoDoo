@@ -34,17 +34,17 @@ Content area: `390 x 684`; bottom nav: `390 x 160`.
 | Logo | `x=20 y=30 w=350 h=145` |
 | Music button | `x=335 y=34 w=54 h=54` |
 | Guide text | `x=45 y=198 w=300 h=36` |
-| Path stones | `x=116 y=474 w=160 h=120` |
-| Pawprints | `x=170 y=468 w=120 h=80` |
-| Main pedestal | `x=104 y=386 w=184 h=68` |
-| Left pedestal | `x=2 y=580 w=162 h=62` |
-| Right pedestal | `x=226 y=596 w=162 h=62` |
-| 小暴 character | `x=106 y=230 w=182 h=212` |
-| 小暴 badge | `x=124 y=422 w=142 h=54` |
-| 阿呆 character | `x=-12 y=430 w=190 h=207` |
-| 阿呆 badge | `x=20 y=602 w=142 h=54` |
-| 咕噜 character | `x=222 y=464 w=168 h=182` |
-| 咕噜 badge | `x=228 y=618 w=142 h=54` |
+| Path stones | `x=112 y=500 w=166 h=124` |
+| Pawprints | `x=164 y=492 w=122 h=82` |
+| Main pedestal | `x=102 y=388 w=186 h=70` |
+| Left pedestal | `x=4 y=586 w=166 h=64` |
+| Right pedestal | `x=226 y=596 w=160 h=62` |
+| 小暴 character | `x=100 y=220 w=194 h=226` |
+| 小暴 badge | `x=124 y=426 w=142 h=54` |
+| 阿呆 character | `x=-8 y=438 w=186 h=202` |
+| 阿呆 badge | `x=20 y=610 w=142 h=54` |
+| 咕噜 character | `x=232 y=454 w=174 h=188` |
+| 咕噜 badge | `x=232 y=620 w=142 h=54` |
 
 ## Acceptance
 
