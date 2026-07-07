@@ -31,14 +31,14 @@ Bottom navigation slot: `x=0, y=684, w=390, h=160`.
 
 | Item | Column | Icon Slot | Label Slot |
 | --- | ---: | --- | --- |
-| 作品 | 0-130 | `x=52 y=30 w=60 h=58` | `x=37 y=116 w=88 h=38` |
-| 孵化 | 130-260 | `x=152 y=12 w=86 h=96` | `x=151 y=116 w=88 h=38` |
-| 家长 | 260-390 | `x=274 y=30 w=68 h=58` | `x=264 y=116 w=88 h=38` |
+| 作品 | 0-130 | `x=52 y=41 w=60 h=58` | `x=38 y=108 w=88 h=38` |
+| 孵化 | 130-260 | `x=152 y=12 w=86 h=96` | `x=150 y=108 w=88 h=38` |
+| 家长 | 260-390 | `x=274 y=41 w=68 h=58` | `x=264 y=108 w=88 h=38` |
 
 ## Alignment Notes
 
 - Icon slots are tuned by visible alpha bounds, not by full PNG canvas size.
-- Labels share the same `y=116` baseline area so text sits below the raised pads.
+- Labels share the same `y=108` label band so text sits below the raised pads without touching the bottom edge.
 - The right label intentionally starts at `x=264` because the label PNG has transparent side padding; this centers the visible `家长` text under the right pad.
 
 ## Acceptance

@@ -64,12 +64,12 @@ Current H5 nav slots:
 | Element | Slot |
 | --- | --- |
 | `nav.background` | `x=0 y=684 w=390 h=160` |
-| `nav.icon.works` | `x=52 y=714 w=60 h=58` |
+| `nav.icon.works` | `x=52 y=725 w=60 h=58` |
 | `nav.icon.hatch` | `x=152 y=696 w=86 h=96` |
-| `nav.icon.parent` | `x=274 y=714 w=68 h=58` |
-| `nav.label.works` | `x=37 y=800 w=88 h=38` |
-| `nav.label.hatch` | `x=151 y=800 w=88 h=38` |
-| `nav.label.parent` | `x=264 y=800 w=88 h=38` |
+| `nav.icon.parent` | `x=274 y=725 w=68 h=58` |
+| `nav.label.works` | `x=38 y=792 w=88 h=38` |
+| `nav.label.hatch` | `x=150 y=792 w=88 h=38` |
+| `nav.label.parent` | `x=264 y=792 w=88 h=38` |
 
 ## Acceptance
 
