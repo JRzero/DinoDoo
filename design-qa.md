@@ -54,6 +54,7 @@ final result: passed
 - Updated static validation so it requires empty backgrounds and independent home path/pedestal composition.
 - Repointed the hidden story dinosaur image away from the legacy `/assets/xiaobao.png` file and into the element library.
 - Regenerated browser screenshots and runtime preview evidence for all five H5 pages.
+- Realigned the bottom navigation icons and labels so each icon sits inside its raised pad and each label sits in the bottom label band.
 - Cleaned the home element README so it states the current empty-background composition contract.
 
 ## Pixel Diff Notes

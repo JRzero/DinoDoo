@@ -257,12 +257,12 @@ function drawNavLayer() {
   if (!stage.ready || !stage.nav) return;
   stage.nav.replaceChildren();
   navImg("navBg", { x: 0, y: 0, w: 390, h: 160 });
-  navImg("navWorks", { x: 43, y: 18, w: 60, h: 58 });
-  navImg("navHatch", { x: 152, y: 2, w: 86, h: 96 });
-  navImg("navParent", { x: 295, y: 18, w: 68, h: 58 });
-  navImg("navLabelWorks", { x: 37, y: 108, w: 88, h: 38 });
-  navImg("navLabelHatch", { x: 151, y: 108, w: 88, h: 38 });
-  navImg("navLabelParent", { x: 296, y: 108, w: 88, h: 38 });
+  navImg("navWorks", { x: 52, y: 30, w: 60, h: 58 });
+  navImg("navHatch", { x: 152, y: 12, w: 86, h: 96 });
+  navImg("navParent", { x: 274, y: 30, w: 68, h: 58 });
+  navImg("navLabelWorks", { x: 37, y: 116, w: 88, h: 38 });
+  navImg("navLabelHatch", { x: 151, y: 116, w: 88, h: 38 });
+  navImg("navLabelParent", { x: 264, y: 116, w: 88, h: 38 });
 }
 
 function drawHomeScene() {

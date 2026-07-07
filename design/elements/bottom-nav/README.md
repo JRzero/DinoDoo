@@ -2,19 +2,15 @@
 
 ## Direction
 
-Use `bottom-nav-suite-v1.png` as the first visual target for the bottom navigation asset batch.
+The bottom navigation is a fixed H5 element group assembled from one base image, three independent icon PNGs, and three independent label PNGs.
 
-The bottom navigation is fixed as:
+Fixed order:
 
 - 作品
 - 孵化
 - 家长
 
 The center item is **孵化** and must use a hatching egg / cracked shell / baby dinosaur idea. Do not use a microphone for the bottom navigation.
-
-## Source Board
-
-- `bottom-nav-suite-v1.png`
 
 ## Required Assets
 
@@ -28,31 +24,28 @@ The center item is **孵化** and must use a hatching egg / cracked shell / baby
 | `nav.label.hatch` | `nav-label-hatch.png` | 110 x 48 | Transparent PNG | Text: 孵化 |
 | `nav.label.parent` | `nav-label-parent.png` | 110 x 48 | Transparent PNG | Text: 家长 |
 
-## States
-
-| State | Requirement |
-| --- | --- |
-| normal | Soft cream pad, icon centered, label aligned to the same baseline |
-| active | Selected pad is slightly lifted/brighter, icon reads a little stronger |
-| pressed | Pad compresses subtly, shadow shortens |
-
 ## Layout Slots
 
 Design coordinate system: `390 x 844`.
-
 Bottom navigation slot: `x=0, y=684, w=390, h=160`.
 
-| Item | Column | Pad Slot | Icon Slot | Label Slot |
-| --- | ---: | --- | --- | --- |
-| 作品 | 0-130 | x=24 y=12 w=106 h=96 | x=43 y=22 w=60 h=58 | x=37 y=108 w=88 h=38 |
-| 孵化 | 130-260 | x=142 y=0 w=106 h=112 | x=152 y=8 w=86 h=96 | x=151 y=108 w=88 h=38 |
-| 家长 | 260-390 | x=260 y=12 w=106 h=96 | x=295 y=22 w=68 h=58 | x=296 y=108 w=88 h=38 |
+| Item | Column | Icon Slot | Label Slot |
+| --- | ---: | --- | --- |
+| 作品 | 0-130 | `x=52 y=30 w=60 h=58` | `x=37 y=116 w=88 h=38` |
+| 孵化 | 130-260 | `x=152 y=12 w=86 h=96` | `x=151 y=116 w=88 h=38` |
+| 家长 | 260-390 | `x=274 y=30 w=68 h=58` | `x=264 y=116 w=88 h=38` |
+
+## Alignment Notes
+
+- Icon slots are tuned by visible alpha bounds, not by full PNG canvas size.
+- Labels share the same `y=116` baseline area so text sits below the raised pads.
+- The right label intentionally starts at `x=264` because the label PNG has transparent side padding; this centers the visible `家长` text under the right pad.
 
 ## Acceptance
 
 - The complete nav bar should visually match the original design draft structure.
+- Icons sit inside the raised pads rather than floating above them.
+- Labels sit in the bottom label band and align to their icon/pad centers.
 - No black background or accidental transparent gaps behind the cream base.
-- The middle label must read `孵化`.
 - All Chinese text must be manually checked.
-- Icons must feel like one family: same lighting, thickness, material, and shadow style.
 - Assets must remain reusable as separate PNGs.
