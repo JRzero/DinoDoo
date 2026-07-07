@@ -37,14 +37,14 @@ Content area: `390 x 684`; bottom nav: `390 x 160`.
 | Path stones | `x=116 y=474 w=160 h=120` |
 | Pawprints | `x=170 y=468 w=120 h=80` |
 | Main pedestal | `x=112 y=389 w=170 h=64` |
-| Left pedestal | `x=14 y=616 w=150 h=58` |
-| Right pedestal | `x=224 y=616 w=150 h=58` |
-| 小暴 character | `x=112 y=245 w=170 h=188` |
+| Left pedestal | `x=14 y=594 w=150 h=58` |
+| Right pedestal | `x=224 y=594 w=150 h=58` |
+| 小暴 character | `x=118 y=252 w=158 h=184` |
 | 小暴 badge | `x=124 y=430 w=142 h=54` |
-| 阿呆 character | `x=0 y=445 w=178 h=223` |
-| 阿呆 badge | `x=28 y=626 w=142 h=54` |
-| 咕噜 character | `x=214 y=445 w=174 h=222` |
-| 咕噜 badge | `x=228 y=626 w=142 h=54` |
+| 阿呆 character | `x=4 y=450 w=170 h=185` |
+| 阿呆 badge | `x=28 y=612 w=142 h=54` |
+| 咕噜 character | `x=216 y=452 w=168 h=182` |
+| 咕噜 badge | `x=228 y=612 w=142 h=54` |
 
 ## Acceptance
 
