@@ -270,17 +270,17 @@ function drawHomeScene() {
   img("homeLogo", { x: 20, y: 30, w: 350, h: 145 });
   img("homeMusic", { x: 335, y: 34, w: 54, h: 54 });
   img("homeGuide", { x: 45, y: 198, w: 300, h: 36 });
-  img("homePath", { x: 112, y: 500, w: 166, h: 124 });
-  img("homePaws", { x: 164, y: 492, w: 122, h: 82 });
-  img("pedestalLarge", { x: 102, y: 388, w: 186, h: 70 });
-  img("pedestalSmall", { x: 4, y: 586, w: 166, h: 64 });
-  img("pedestalSmall", { x: 226, y: 596, w: 160, h: 62 });
-  img("dinoXiaobao", { x: 100, y: 220, w: 194, h: 226 });
-  img("dinoAdai", { x: -8, y: 438, w: 186, h: 202 });
-  img("dinoGulu", { x: 232, y: 454, w: 174, h: 188 });
-  img("badgeXiaobao", { x: 124, y: 426, w: 142, h: 54 });
-  img("badgeAdai", { x: 20, y: 610, w: 142, h: 54 });
-  img("badgeGulu", { x: 232, y: 620, w: 142, h: 54 });
+  img("homePath", { x: 116, y: 456, w: 160, h: 120 });
+  img("homePaws", { x: 170, y: 450, w: 120, h: 80 });
+  img("pedestalLarge", { x: 112, y: 389, w: 170, h: 64 });
+  img("pedestalSmall", { x: 4, y: 570, w: 166, h: 64 });
+  img("pedestalSmall", { x: 224, y: 570, w: 166, h: 64 });
+  img("dinoXiaobao", { x: 118, y: 220, w: 170, h: 198 });
+  img("dinoAdai", { x: -14, y: 416, w: 186, h: 202 });
+  img("dinoGulu", { x: 216, y: 430, w: 174, h: 188 });
+  img("badgeXiaobao", { x: 124, y: 404, w: 142, h: 54 });
+  img("badgeAdai", { x: 20, y: 590, w: 142, h: 54 });
+  img("badgeGulu", { x: 228, y: 590, w: 142, h: 54 });
 }
 
 function drawStoryScene() {
