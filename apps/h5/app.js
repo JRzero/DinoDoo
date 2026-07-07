@@ -257,9 +257,9 @@ function drawNavLayer() {
   if (!stage.ready || !stage.nav) return;
   stage.nav.replaceChildren();
   navImg("navBg", { x: 0, y: 0, w: 390, h: 160 });
-  navImg("navWorks", { x: 52, y: 41, w: 60, h: 58 });
-  navImg("navHatch", { x: 152, y: 12, w: 86, h: 96 });
-  navImg("navParent", { x: 274, y: 41, w: 68, h: 58 });
+  navImg("navWorks", { x: 52, y: 49, w: 60, h: 58 });
+  navImg("navHatch", { x: 152, y: 18, w: 86, h: 96 });
+  navImg("navParent", { x: 274, y: 49, w: 68, h: 58 });
   navImg("navLabelWorks", { x: 38, y: 108, w: 88, h: 38 });
   navImg("navLabelHatch", { x: 150, y: 108, w: 88, h: 38 });
   navImg("navLabelParent", { x: 264, y: 108, w: 88, h: 38 });
@@ -671,7 +671,7 @@ function bindEvents() {
   document.querySelectorAll("[data-hatch-chip]").forEach((button) => button.addEventListener("click", () => addChip(button.dataset.hatchChip)));
   $("hatchForm").addEventListener("submit", (event) => { event.preventDefault(); hatchDino(); });
   $("refreshArtifacts").addEventListener("click", () => { setAction("works:refresh"); loadArtifacts({ showBackend: true }); });
-  $("galleryTab").addEventListener("click", () => routeTo("works"));
+  $("galleryTab").addEventListener("click", () => routeTo("home"));
   $("hatchTab").addEventListener("click", () => routeTo("hatch"));
   $("parentTab").addEventListener("click", () => routeTo("parent"));
   $("saveSettings").addEventListener("click", saveSettings);

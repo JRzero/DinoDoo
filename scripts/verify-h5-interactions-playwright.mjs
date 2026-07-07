@@ -55,9 +55,9 @@ async function main() {
     await expectHash(page, "#home");
 
     await page.locator("#galleryTab").click();
-    await waitForRoute(page, "works");
-    await expectHash(page, "#works");
-    await expectAssetLayers(page, { route: "works", minSceneAssets: 4 });
+    await waitForRoute(page, "home");
+    await expectHash(page, "#home");
+    await expectAssetLayers(page, { route: "home", minSceneAssets: 13 });
     const navWorks = await navMetrics(page);
 
     await page.locator("#parentTab").click();
