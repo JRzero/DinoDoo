@@ -83,6 +83,22 @@ button {
   text-shadow: 0 1px 0 rgba(255, 246, 211, 0.75);
   white-space: normal;
 }
+
+.scene-text.dino-name {
+  display: block;
+  max-height: none;
+  overflow: visible;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  letter-spacing: 0;
+  text-shadow:
+    0 2px 0 rgba(127, 72, 24, 0.72),
+    1px 0 0 rgba(127, 72, 24, 0.42),
+    -1px 0 0 rgba(127, 72, 24, 0.42);
+  white-space: nowrap;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: initial;
+  -webkit-text-stroke: 0.75px rgba(127, 72, 24, 0.46);
+}
 .screen {
   position: absolute;
   left: 0;

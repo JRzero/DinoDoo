@@ -34,6 +34,7 @@ const copy = {
 };
 
 const assetSources = {
+  bgHomeV2: `${GE}/home-redesign-v2/background-clean.png`,
   bgHome: `${GE}/backgrounds/home-empty.png`,
   bgStory: `${GE}/backgrounds/story-empty.png`,
   bgHatch: `${GE}/backgrounds/hatch-empty.png`,
@@ -52,6 +53,15 @@ const assetSources = {
   badgeXiaobao: `${GE}/home/badge-xiaobao.png`,
   badgeAdai: `${GE}/home/badge-adai.png`,
   badgeGulu: `${GE}/home/badge-gulu.png`,
+  homeV2DinoXiaobao: `${GE}/home-redesign-v2/dino-xiaobao.png`,
+  homeV2DinoAdai: `${GE}/home-redesign-v2/dino-adai.png`,
+  homeV2DinoGulu: `${GE}/home-redesign-v2/dino-gulu.png`,
+  homeV2PedestalCenter: `${GE}/home-redesign-v2/pedestal-center.png`,
+  homeV2PedestalLeft: `${GE}/home-redesign-v2/pedestal-left.png`,
+  homeV2PedestalRight: `${GE}/home-redesign-v2/pedestal-right.png`,
+  homeV2BadgeOrange: `${GE}/home-redesign-v2/badge-orange.png`,
+  homeV2BadgeCoral: `${GE}/home-redesign-v2/badge-coral.png`,
+  homeV2BadgeTeal: `${GE}/home-redesign-v2/badge-teal.png`,
   navBg: `${GE}/nav/nav-bg.png`,
   navWorks: `${GE}/nav/nav-works.png`,
   navHatch: `${GE}/nav/nav-hatch.png`,
@@ -266,21 +276,25 @@ function drawNavLayer() {
 }
 
 function drawHomeScene() {
-  img("bgHome", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
-  img("homeLogo", { x: 20, y: 30, w: 350, h: 145 });
-  img("homeMusic", { x: 335, y: 34, w: 54, h: 54 });
-  img("homeGuide", { x: 45, y: 198, w: 300, h: 36 });
-  img("homePath", { x: 116, y: 456, w: 160, h: 120 });
-  img("homePaws", { x: 170, y: 450, w: 120, h: 80 });
-  img("pedestalLarge", { x: 112, y: 389, w: 170, h: 64 });
-  img("pedestalSmall", { x: 4, y: 570, w: 166, h: 64 });
-  img("pedestalSmall", { x: 224, y: 570, w: 166, h: 64 });
-  img("dinoXiaobao", { x: 118, y: 220, w: 170, h: 198 });
-  img("dinoAdai", { x: -14, y: 416, w: 186, h: 202 });
-  img("dinoGulu", { x: 216, y: 430, w: 174, h: 188 });
-  img("badgeXiaobao", { x: 124, y: 404, w: 142, h: 54 });
-  img("badgeAdai", { x: 20, y: 590, w: 142, h: 54 });
-  img("badgeGulu", { x: 228, y: 590, w: 142, h: 54 });
+  img("bgHomeV2", { x: 0, y: 0, w: 390, h: 844 }, { className: "scene-bg" });
+  img("homeLogo", { x: 52, y: 64, w: 286, h: 118 });
+  img("homeMusic", { x: 340, y: 42, w: 48, h: 48 });
+  drawWrappedText(copy.intro, 195, 196, 300, 24, 1, { font: "bold 16px Arial, sans-serif", color: "#73512d" });
+
+  img("homeV2PedestalCenter", { x: 120, y: 360, w: 150, h: 76 });
+  img("homeV2DinoXiaobao", { x: 135, y: 250, w: 120, h: 145 });
+  img("homeV2BadgeOrange", { x: 129, y: 416, w: 132, h: 56 });
+  drawWrappedText(copy.dinos.xiaobao, 195, 452, 108, 34, 1, { className: "dino-name", font: "900 26px Arial, sans-serif", color: "#fff7dc" });
+
+  img("homeV2PedestalLeft", { x: 27, y: 542, w: 126, h: 67 });
+  img("homeV2DinoAdai", { x: 40, y: 458, w: 100, h: 115 });
+  img("homeV2BadgeCoral", { x: 29, y: 606, w: 126, h: 54 });
+  drawWrappedText(copy.dinos.adai, 92, 640, 100, 28, 1, { className: "dino-name", font: "900 22px Arial, sans-serif", color: "#fff7dc" });
+
+  img("homeV2PedestalRight", { x: 237, y: 542, w: 126, h: 67 });
+  img("homeV2DinoGulu", { x: 254, y: 457, w: 92, h: 115 });
+  img("homeV2BadgeTeal", { x: 235, y: 606, w: 126, h: 54 });
+  drawWrappedText(copy.dinos.gulu, 298, 640, 100, 28, 1, { className: "dino-name", font: "900 22px Arial, sans-serif", color: "#fff7dc" });
 }
 
 function drawStoryScene() {
@@ -411,7 +425,7 @@ function drawWrappedText(text, x, y, maxWidth, lineHeight, maxLines, options = {
   if (!stage.scene) return;
   const align = options.align || "center";
   const el = document.createElement("p");
-  el.className = "scene-text";
+  el.className = ["scene-text", options.className].filter(Boolean).join(" ");
   el.textContent = String(text || "");
   el.style.left = `${align === "left" ? x : x - maxWidth / 2}px`;
   el.style.top = `${y - lineHeight}px`;
@@ -421,6 +435,7 @@ function drawWrappedText(text, x, y, maxWidth, lineHeight, maxLines, options = {
   el.style.font = options.font || "bold 18px sans-serif";
   el.style.color = options.color || "#68421f";
   el.style.textAlign = align;
+  if (options.textShadow) el.style.textShadow = options.textShadow;
   el.style.webkitLineClamp = String(maxLines);
   stage.scene.appendChild(el);
 }
