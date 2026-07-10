@@ -1,0 +1,446 @@
+{
+    "name":  "runtime-current",
+    "purpose":  "Consolidated H5 runtime assets currently referenced by apps/h5/app.js assetSources",
+    "generatedAt":  "2026-07-09T11:26:00",
+    "eggSource":  "design/generated/hatch-independent-assets-v1/egg-source.png",
+    "assets":  [
+                   {
+                       "key":  "bgHomeV2",
+                       "file":  "bgHomeV2.png",
+                       "from":  "${IND}/home/background-clean.png"
+                   },
+                   {
+                       "key":  "bgHome",
+                       "file":  "bgHome.png",
+                       "from":  "${GE}/backgrounds/home-empty.png"
+                   },
+                   {
+                       "key":  "bgStory",
+                       "file":  "bgStory.png",
+                       "from":  "${GE}/backgrounds/story-empty.png"
+                   },
+                   {
+                       "key":  "bgHatch",
+                       "file":  "bgHatch.png",
+                       "from":  "${GE}/hatch-dev-v3/background-clean.png"
+                   },
+                   {
+                       "key":  "bgWorks",
+                       "file":  "bgWorks.png",
+                       "from":  "${GE}/backgrounds/works-empty.png"
+                   },
+                   {
+                       "key":  "bgParent",
+                       "file":  "bgParent.png",
+                       "from":  "${GE}/backgrounds/parent-empty.png"
+                   },
+                   {
+                       "key":  "homeLogo",
+                       "file":  "homeLogo.png",
+                       "from":  "${IND}/common/logo-dinodoo.png"
+                   },
+                   {
+                       "key":  "homeMusic",
+                       "file":  "homeMusic.png",
+                       "from":  "${IND}/common/button-music.png"
+                   },
+                   {
+                       "key":  "homeGuide",
+                       "file":  "homeGuide.png",
+                       "from":  "${GE}/home/home-guide-text.png"
+                   },
+                   {
+                       "key":  "homePath",
+                       "file":  "homePath.png",
+                       "from":  "${GE}/home/path-stones.png"
+                   },
+                   {
+                       "key":  "homePaws",
+                       "file":  "homePaws.png",
+                       "from":  "${GE}/home/pawprints.png"
+                   },
+                   {
+                       "key":  "pedestalLarge",
+                       "file":  "pedestalLarge.png",
+                       "from":  "${GE}/home/pedestal-large.png"
+                   },
+                   {
+                       "key":  "pedestalSmall",
+                       "file":  "pedestalSmall.png",
+                       "from":  "${GE}/home/pedestal-small.png"
+                   },
+                   {
+                       "key":  "dinoXiaobao",
+                       "file":  "dinoXiaobao.png",
+                       "from":  "${GE}/home/dino-xiaobao.png"
+                   },
+                   {
+                       "key":  "dinoAdai",
+                       "file":  "dinoAdai.png",
+                       "from":  "${GE}/home/dino-adai.png"
+                   },
+                   {
+                       "key":  "dinoGulu",
+                       "file":  "dinoGulu.png",
+                       "from":  "${GE}/home/dino-gulu.png"
+                   },
+                   {
+                       "key":  "badgeXiaobao",
+                       "file":  "badgeXiaobao.png",
+                       "from":  "${GE}/home/badge-xiaobao.png"
+                   },
+                   {
+                       "key":  "badgeAdai",
+                       "file":  "badgeAdai.png",
+                       "from":  "${GE}/home/badge-adai.png"
+                   },
+                   {
+                       "key":  "badgeGulu",
+                       "file":  "badgeGulu.png",
+                       "from":  "${GE}/home/badge-gulu.png"
+                   },
+                   {
+                       "key":  "homeV2DinoXiaobao",
+                       "file":  "homeV2DinoXiaobao.png",
+                       "from":  "${IND}/home/dino-xiaobao.png"
+                   },
+                   {
+                       "key":  "homeV2DinoAdai",
+                       "file":  "homeV2DinoAdai.png",
+                       "from":  "${IND}/home/dino-adai.png"
+                   },
+                   {
+                       "key":  "homeV2DinoGulu",
+                       "file":  "homeV2DinoGulu.png",
+                       "from":  "${IND}/home/dino-gulu.png"
+                   },
+                   {
+                       "key":  "homeV2PedestalCenter",
+                       "file":  "homeV2PedestalCenter.png",
+                       "from":  "${IND}/home/pedestal-center.png"
+                   },
+                   {
+                       "key":  "homeV2PedestalLeft",
+                       "file":  "homeV2PedestalLeft.png",
+                       "from":  "${IND}/home/pedestal-left.png"
+                   },
+                   {
+                       "key":  "homeV2PedestalRight",
+                       "file":  "homeV2PedestalRight.png",
+                       "from":  "${IND}/home/pedestal-right.png"
+                   },
+                   {
+                       "key":  "homeV2BadgeOrange",
+                       "file":  "homeV2BadgeOrange.png",
+                       "from":  "${IND}/home/badge-xiaobao-blank.png"
+                   },
+                   {
+                       "key":  "homeV2BadgeCoral",
+                       "file":  "homeV2BadgeCoral.png",
+                       "from":  "${IND}/home/badge-adai-blank.png"
+                   },
+                   {
+                       "key":  "homeV2BadgeTeal",
+                       "file":  "homeV2BadgeTeal.png",
+                       "from":  "${IND}/home/badge-gulu-blank.png"
+                   },
+                   {
+                       "key":  "navBg",
+                       "file":  "navBg.png",
+                       "from":  "${IND}/nav/nav-bg.png"
+                   },
+                   {
+                       "key":  "navWorks",
+                       "file":  "navWorks.png",
+                       "from":  "${IND}/nav/nav-works-icon.png"
+                   },
+                   {
+                       "key":  "navHatch",
+                       "file":  "navHatch.png",
+                       "from":  "${IND}/nav/nav-hatch-icon.png"
+                   },
+                   {
+                       "key":  "navParent",
+                       "file":  "navParent.png",
+                       "from":  "${IND}/nav/nav-parent-icon.png"
+                   },
+                   {
+                       "key":  "navLabelWorks",
+                       "file":  "navLabelWorks.png",
+                       "from":  "${GE}/nav/nav-label-works.png"
+                   },
+                   {
+                       "key":  "navLabelHatch",
+                       "file":  "navLabelHatch.png",
+                       "from":  "${GE}/nav/nav-label-hatch.png"
+                   },
+                   {
+                       "key":  "navLabelParent",
+                       "file":  "navLabelParent.png",
+                       "from":  "${GE}/nav/nav-label-parent.png"
+                   },
+                   {
+                       "key":  "storyTitle",
+                       "file":  "storyTitle.png",
+                       "from":  "${GE}/story/story-title.png"
+                   },
+                   {
+                       "key":  "storyBubble",
+                       "file":  "storyBubble.png",
+                       "from":  "${GE}/story/story-bubble.png"
+                   },
+                   {
+                       "key":  "storyVoice",
+                       "file":  "storyVoice.png",
+                       "from":  "${GE}/story-v2/button-speak.png"
+                   },
+                   {
+                       "key":  "storyChoiceA",
+                       "file":  "storyChoiceA.png",
+                       "from":  "${GE}/story-v2/button-look.png"
+                   },
+                   {
+                       "key":  "storyChoiceB",
+                       "file":  "storyChoiceB.png",
+                       "from":  "${GE}/story-v2/button-listen.png"
+                   },
+                   {
+                       "key":  "hatchSubtitlePlaque",
+                       "file":  "hatchSubtitlePlaque.png",
+                       "from":  "${IND}/hatch/subtitle-plaque-blank.png"
+                   },
+                   {
+                       "key":  "hatchLogo",
+                       "file":  "hatchLogo.png",
+                       "from":  "${IND}/common/logo-dinodoo.png"
+                   },
+                   {
+                       "key":  "hatchMusic",
+                       "file":  "hatchMusic.png",
+                       "from":  "${GE}/hatch-dev-v3/button-music.png"
+                   },
+                   {
+                       "key":  "hatchEggIdle",
+                       "file":  "hatchEggIdle.png",
+                       "from":  "design/generated/hatch-independent-assets-v1/egg-source.png",
+                       "processed":  "checkerboard removed, alpha restored, original source canvas preserved"
+                   },
+                   {
+                       "key":  "hatchEggCracking",
+                       "file":  "hatchEggCracking.png",
+                       "from":  "${GE}/hatch/egg-cracking.png",
+                       "processed":  "copied from independent cracking-state PNG; alpha and native 260x300 aspect preserved"
+                   },
+                   {
+                       "key":  "hatchEggSuccess",
+                       "file":  "hatchEggSuccess.png",
+                       "from":  "${GE}/hatch/egg-success.png",
+                       "processed":  "copied from independent broken-shell PNG; alpha and native 260x300 aspect preserved"
+                   },
+                   {
+                       "key":  "hatchInputPanel",
+                       "file":  "hatchInputPanel.png",
+                       "from":  "${GE}/hatch-independent-v1/panel.png"
+                   },
+                   {
+                       "key":  "hatchInputRow",
+                       "file":  "hatchInputRow.png",
+                       "from":  "${GE}/hatch-target-components-v1/input-row-blank.png"
+                   },
+                   {
+                       "key":  "hatchChipBlue",
+                       "file":  "hatchChipBlue.png",
+                       "from":  "${IND}/hatch/chip-blank.png"
+                   },
+                   {
+                       "key":  "hatchChipSing",
+                       "file":  "hatchChipSing.png",
+                       "from":  "${IND}/hatch/chip-blank.png"
+                   },
+                   {
+                       "key":  "hatchChipHorn",
+                       "file":  "hatchChipHorn.png",
+                       "from":  "${IND}/hatch/chip-blank.png"
+                   },
+                   {
+                       "key":  "hatchButtonVoice",
+                       "file":  "hatchButtonVoice.png",
+                       "from":  "${IND}/hatch/button-voice-icon.png"
+                   },
+                   {
+                       "key":  "hatchButtonImage",
+                       "file":  "hatchButtonImage.png",
+                       "from":  "${IND}/hatch/button-image-icon.png"
+                   },
+                   {
+                       "key":  "hatchButtonStart",
+                       "file":  "hatchButtonStart.png",
+                       "from":  "${IND}/hatch/button-primary-blank.png"
+                   },
+                   {
+                       "key":  "hatchStatusLoading",
+                       "file":  "hatchStatusLoading.png",
+                       "from":  "${GE}/hatch/status-loading.png"
+                   },
+                   {
+                       "key":  "hatchStatusRecording",
+                       "file":  "hatchStatusRecording.png",
+                       "from":  "${GE}/hatch/status-recording.png"
+                   },
+                   {
+                       "key":  "hatchStatusImageSelected",
+                       "file":  "hatchStatusImageSelected.png",
+                       "from":  "${GE}/hatch/status-image-selected.png"
+                   },
+                   {
+                       "key":  "hatchStatusSuccess",
+                       "file":  "hatchStatusSuccess.png",
+                       "from":  "${GE}/hatch/status-success.png"
+                   },
+                   {
+                       "key":  "worksTitle",
+                       "file":  "worksTitle.png",
+                       "from":  "${GE}/works/works-title.png"
+                   },
+                   {
+                       "key":  "worksBoard",
+                       "file":  "worksBoard.png",
+                       "from":  "${GE}/works/works-board.png"
+                   },
+                   {
+                       "key":  "worksEmpty",
+                       "file":  "worksEmpty.png",
+                       "from":  "${GE}/works/works-empty-panel.png"
+                   },
+                   {
+                       "key":  "worksCardFeatured",
+                       "file":  "worksCardFeatured.png",
+                       "from":  "${GE}/works/work-card-featured.png"
+                   },
+                   {
+                       "key":  "worksCardNormal",
+                       "file":  "worksCardNormal.png",
+                       "from":  "${GE}/works/work-card-normal.png"
+                   },
+                   {
+                       "key":  "worksRibbonFeatured",
+                       "file":  "worksRibbonFeatured.png",
+                       "from":  "${GE}/works/ribbon-featured.png"
+                   },
+                   {
+                       "key":  "worksMetaDate",
+                       "file":  "worksMetaDate.png",
+                       "from":  "${GE}/works/meta-date.png"
+                   },
+                   {
+                       "key":  "worksMetaPaw",
+                       "file":  "worksMetaPaw.png",
+                       "from":  "${GE}/works/meta-paw.png"
+                   },
+                   {
+                       "key":  "worksMetaCrown",
+                       "file":  "worksMetaCrown.png",
+                       "from":  "${GE}/works/meta-crown.png"
+                   },
+                   {
+                       "key":  "worksMetaHeart",
+                       "file":  "worksMetaHeart.png",
+                       "from":  "${GE}/works/meta-heart.png"
+                   },
+                   {
+                       "key":  "worksMetaLeaf",
+                       "file":  "worksMetaLeaf.png",
+                       "from":  "${GE}/works/meta-leaf.png"
+                   },
+                   {
+                       "key":  "worksRefresh",
+                       "file":  "worksRefresh.png",
+                       "from":  "${GE}/works/button-refresh-works.png"
+                   },
+                   {
+                       "key":  "parentTitle",
+                       "file":  "parentTitle.png",
+                       "from":  "${GE}/parent/parent-title.png"
+                   },
+                   {
+                       "key":  "parentBoard",
+                       "file":  "parentBoard.png",
+                       "from":  "${GE}/parent/parent-board.png"
+                   },
+                   {
+                       "key":  "parentRowSound",
+                       "file":  "parentRowSound.png",
+                       "from":  "${GE}/parent/row-sound.png"
+                   },
+                   {
+                       "key":  "parentRowImage",
+                       "file":  "parentRowImage.png",
+                       "from":  "${GE}/parent/row-image.png"
+                   },
+                   {
+                       "key":  "parentRowMusic",
+                       "file":  "parentRowMusic.png",
+                       "from":  "${GE}/parent/row-music.png"
+                   },
+                   {
+                       "key":  "parentToggleOn",
+                       "file":  "parentToggleOn.png",
+                       "from":  "${GE}/parent/toggle-on.png"
+                   },
+                   {
+                       "key":  "parentToggleOff",
+                       "file":  "parentToggleOff.png",
+                       "from":  "${GE}/parent/toggle-off.png"
+                   },
+                   {
+                       "key":  "parentSlider",
+                       "file":  "parentSlider.png",
+                       "from":  "${GE}/parent/slider.png"
+                   },
+                   {
+                       "key":  "parentTime30",
+                       "file":  "parentTime30.png",
+                       "from":  "${GE}/parent/time-label-30.png"
+                   },
+                   {
+                       "key":  "parentThemeIsland",
+                       "file":  "parentThemeIsland.png",
+                       "from":  "${GE}/parent/chip-island.png"
+                   },
+                   {
+                       "key":  "parentThemeForest",
+                       "file":  "parentThemeForest.png",
+                       "from":  "${GE}/parent/chip-forest.png"
+                   },
+                   {
+                       "key":  "parentThemeSnow",
+                       "file":  "parentThemeSnow.png",
+                       "from":  "${GE}/parent/chip-snow.png"
+                   },
+                   {
+                       "key":  "parentThemeDesert",
+                       "file":  "parentThemeDesert.png",
+                       "from":  "${GE}/parent/chip-desert.png"
+                   },
+                   {
+                       "key":  "parentVoicePermission",
+                       "file":  "parentVoicePermission.png",
+                       "from":  "${GE}/parent/button-voice-permission.png"
+                   },
+                   {
+                       "key":  "parentImagePermission",
+                       "file":  "parentImagePermission.png",
+                       "from":  "${GE}/parent/button-image-permission.png"
+                   },
+                   {
+                       "key":  "parentSave",
+                       "file":  "parentSave.png",
+                       "from":  "${GE}/parent/button-save-settings.png"
+                   },
+                   {
+                       "key":  "parentToastSaved",
+                       "file":  "parentToastSaved.png",
+                       "from":  "${GE}/parent/toast-saved.png"
+                   }
+               ]
+}

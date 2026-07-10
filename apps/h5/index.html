@@ -26,7 +26,7 @@
           <button id="homeButton" class="image-button story-title-art" type="button" aria-label="&#22238;&#21040;&#39318;&#39029;"></button>
           <div class="story-hotspots">
             <span id="themePill" class="visually-hidden">&#24425;&#34425;&#26862;&#26519;</span>
-            <div id="dinoAvatar" class="visually-hidden"><img id="dinoImage" src="/assets/game-elements/home/dino-xiaobao.png" alt="&#23567;&#26292;" /></div>
+            <div id="dinoAvatar" class="visually-hidden"><img id="dinoImage" src="/assets/game-elements/runtime-current/homeV2DinoXiaobao.png" alt="&#23567;&#26292;" /></div>
             <span id="speakerName" class="visually-hidden">&#23567;&#26292;</span>
             <p id="dinoLine" class="visually-hidden">&#36873;&#19968;&#21482;&#24656;&#40857;&#65292;&#25925;&#20107;&#23601;&#24320;&#22987;&#21862;&#12290;</p>
             <button id="choiceA" class="image-button story-choice-a" type="button" aria-label="&#36873;&#25321;&#31532;&#19968;&#20010;&#25925;&#20107;&#26041;&#21521;"></button>
@@ -46,11 +46,9 @@
             <button id="hatchMicButton" class="hotspot hatch-mic" type="button">&#35828;</button>
             <button id="hatchImageButton" class="hotspot hatch-image" type="button">&#22270;</button>
             <input id="hatchPrompt" class="hatch-prompt-input" type="text" maxlength="42" placeholder="&#35828;&#35828;&#20320;&#24819;&#35201;&#30340;&#23567;&#24656;&#40857;..." aria-label="&#35828;&#35828;&#20320;&#24819;&#35201;&#30340;&#23567;&#24656;&#40857;" />
-            <button class="hotspot hatch-chip chip-blue" type="button" data-hatch-chip="&#34013;&#33394;">&#34013;&#33394;</button>
-            <button class="hotspot hatch-chip chip-sing" type="button" data-hatch-chip="&#20250;&#21809;&#27468;">&#20250;&#21809;&#27468;</button>
-            <button class="hotspot hatch-chip chip-horn" type="button" data-hatch-chip="&#38271;&#35282;">&#38271;&#35282;</button>
-            <button class="hotspot hatch-chip chip-berry" type="button" data-hatch-chip="&#29233;&#33609;&#33683;">&#29233;&#33609;&#33683;</button>
-            <button id="hatchButton" class="hotspot hatch-submit" type="submit">&#24320;&#22987;&#x5B75;&#x5316;</button>
+            <input id="hatchImageInput" class="visually-hidden" type="file" accept="image/*" />
+
+            <button id="hatchButton" class="hotspot hatch-submit" type="button">&#24320;&#22987;&#x5B75;&#x5316;</button>
             <p id="hatchStatus" class="hatch-status" aria-live="polite"></p>
           </form>
         </div>
@@ -84,6 +82,6 @@
         </nav>
       </section>
     </main>
-    <script src="/app.js"></script>
+    <script src="/app.js?v=20260710-hatch-polished-status"></script>
   </body>
 </html>

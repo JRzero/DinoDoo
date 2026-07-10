@@ -10,11 +10,14 @@ const state = {
   route: "home",
   eggState: "idle",
   hatchStatus: "idle",
+  hatchStatusTimer: null,
+  hatchImageName: "",
   parentSaved: false,
 };
 
 const $ = (id) => document.getElementById(id);
 const GE = "/assets/game-elements";
+const ACTIVE = `${GE}/runtime-current`;
 
 const copy = {
   dinos: {
@@ -22,7 +25,7 @@ const copy = {
     adai: "\u963f\u5446",
     gulu: "\u5495\u565c",
   },
-  intro: "\u9009\u4e00\u53ea\u6050\u9f99\uff0c\u6545\u4e8b\u5c31\u5f00\u59cb\u5566\u3002",
+  intro: "\u9009\u4e00\u53ea\u6050\u9f99\uff0c\u51fa\u53d1\u5427\uff01",
   storyA: "\u5b83\u5728\u7011\u5e03\u8fb9\u627e\u5230\u4e00\u679a\u95ea\u5149\u811a\u5370\u3002",
   storyB: "\u8fdc\u5904\u4f20\u6765\u6e29\u67d4\u7684\u5495\u565c\u58f0\u3002",
   voiceFallback: "\u6211\u60f3\u542c\u4e00\u4e2a\u52c7\u6562\u7684\u5c0f\u6545\u4e8b\u3002",
@@ -34,89 +37,77 @@ const copy = {
 };
 
 const assetSources = {
-  bgHomeV2: `${GE}/home-redesign-v2/background-clean.png`,
-  bgHome: `${GE}/backgrounds/home-empty.png`,
-  bgStory: `${GE}/backgrounds/story-empty.png`,
-  bgHatch: `${GE}/backgrounds/hatch-empty.png`,
-  bgWorks: `${GE}/backgrounds/works-empty.png`,
-  bgParent: `${GE}/backgrounds/parent-empty.png`,
-  homeLogo: `${GE}/home/home-logo.png`,
-  homeMusic: `${GE}/home/music-button.png`,
-  homeGuide: `${GE}/home/home-guide-text.png`,
-  homePath: `${GE}/home/path-stones.png`,
-  homePaws: `${GE}/home/pawprints.png`,
-  pedestalLarge: `${GE}/home/pedestal-large.png`,
-  pedestalSmall: `${GE}/home/pedestal-small.png`,
-  dinoXiaobao: `${GE}/home/dino-xiaobao.png`,
-  dinoAdai: `${GE}/home/dino-adai.png`,
-  dinoGulu: `${GE}/home/dino-gulu.png`,
-  badgeXiaobao: `${GE}/home/badge-xiaobao.png`,
-  badgeAdai: `${GE}/home/badge-adai.png`,
-  badgeGulu: `${GE}/home/badge-gulu.png`,
-  homeV2DinoXiaobao: `${GE}/home-redesign-v2/dino-xiaobao.png`,
-  homeV2DinoAdai: `${GE}/home-redesign-v2/dino-adai.png`,
-  homeV2DinoGulu: `${GE}/home-redesign-v2/dino-gulu.png`,
-  homeV2PedestalCenter: `${GE}/home-redesign-v2/pedestal-center.png`,
-  homeV2PedestalLeft: `${GE}/home-redesign-v2/pedestal-left.png`,
-  homeV2PedestalRight: `${GE}/home-redesign-v2/pedestal-right.png`,
-  homeV2BadgeOrange: `${GE}/home-redesign-v2/badge-orange.png`,
-  homeV2BadgeCoral: `${GE}/home-redesign-v2/badge-coral.png`,
-  homeV2BadgeTeal: `${GE}/home-redesign-v2/badge-teal.png`,
-  navBg: `${GE}/nav/nav-bg.png`,
-  navWorks: `${GE}/nav/nav-works.png`,
-  navHatch: `${GE}/nav/nav-hatch.png`,
-  navParent: `${GE}/nav/nav-parent.png`,
-  navLabelWorks: `${GE}/nav/nav-label-works.png`,
-  navLabelHatch: `${GE}/nav/nav-label-hatch.png`,
-  navLabelParent: `${GE}/nav/nav-label-parent.png`,
-  storyTitle: `${GE}/story/story-title.png`,
-  storyBubble: `${GE}/story/story-bubble.png`,
-  storyVoice: `${GE}/story/story-voice.png`,
-  storyChoiceA: `${GE}/story/story-choice-a.png`,
-  storyChoiceB: `${GE}/story/story-choice-b.png`,
-  hatchEggIdle: `${GE}/hatch/egg-idle.png`,
-  hatchEggCracking: `${GE}/hatch/egg-cracking.png`,
-  hatchEggSuccess: `${GE}/hatch/egg-success.png`,
-  hatchInputPanel: `${GE}/hatch/hatch-input-panel.png`,
-  hatchChipBlue: `${GE}/hatch/chip-blue.png`,
-  hatchChipSing: `${GE}/hatch/chip-sing.png`,
-  hatchChipHorn: `${GE}/hatch/chip-horn.png`,
-  hatchButtonVoice: `${GE}/hatch/button-voice.png`,
-  hatchButtonImage: `${GE}/hatch/button-image.png`,
-  hatchButtonStart: `${GE}/hatch/button-start-hatch.png`,
-  hatchStatusLoading: `${GE}/hatch/status-loading.png`,
-  hatchStatusRecording: `${GE}/hatch/status-recording.png`,
-  hatchStatusImageSelected: `${GE}/hatch/status-image-selected.png`,
-  hatchStatusSuccess: `${GE}/hatch/status-success.png`,
-  worksTitle: `${GE}/works/works-title.png`,
-  worksBoard: `${GE}/works/works-board.png`,
-  worksEmpty: `${GE}/works/works-empty-panel.png`,
-  worksCardFeatured: `${GE}/works/work-card-featured.png`,
-  worksCardNormal: `${GE}/works/work-card-normal.png`,
-  worksRibbonFeatured: `${GE}/works/ribbon-featured.png`,
-  worksMetaDate: `${GE}/works/meta-date.png`,
-  worksMetaPaw: `${GE}/works/meta-paw.png`,
-  worksMetaCrown: `${GE}/works/meta-crown.png`,
-  worksMetaHeart: `${GE}/works/meta-heart.png`,
-  worksMetaLeaf: `${GE}/works/meta-leaf.png`,
-  worksRefresh: `${GE}/works/button-refresh-works.png`,
-  parentTitle: `${GE}/parent/parent-title.png`,
-  parentBoard: `${GE}/parent/parent-board.png`,
-  parentRowSound: `${GE}/parent/row-sound.png`,
-  parentRowImage: `${GE}/parent/row-image.png`,
-  parentRowMusic: `${GE}/parent/row-music.png`,
-  parentToggleOn: `${GE}/parent/toggle-on.png`,
-  parentToggleOff: `${GE}/parent/toggle-off.png`,
-  parentSlider: `${GE}/parent/slider.png`,
-  parentTime30: `${GE}/parent/time-label-30.png`,
-  parentThemeIsland: `${GE}/parent/chip-island.png`,
-  parentThemeForest: `${GE}/parent/chip-forest.png`,
-  parentThemeSnow: `${GE}/parent/chip-snow.png`,
-  parentThemeDesert: `${GE}/parent/chip-desert.png`,
-  parentVoicePermission: `${GE}/parent/button-voice-permission.png`,
-  parentImagePermission: `${GE}/parent/button-image-permission.png`,
-  parentSave: `${GE}/parent/button-save-settings.png`,
-  parentToastSaved: `${GE}/parent/toast-saved.png`,
+  bgHomeV2: `${ACTIVE}/bgHomeV2.png`,
+  bgStory: `${ACTIVE}/bgStory.png`,
+  bgHatch: `${ACTIVE}/bgHatch.png`,
+  bgWorks: `${ACTIVE}/bgWorks.png`,
+  bgParent: `${ACTIVE}/bgParent.png`,
+  homeLogo: `${ACTIVE}/homeLogo.png`,
+  homeMusic: `${ACTIVE}/homeMusic.png`,
+  dinoXiaobao: `${ACTIVE}/dinoXiaobao.png`,
+  dinoAdai: `${ACTIVE}/dinoAdai.png`,
+  dinoGulu: `${ACTIVE}/dinoGulu.png`,
+  homeV2DinoXiaobao: `${ACTIVE}/homeV2DinoXiaobao.png`,
+  homeV2DinoAdai: `${ACTIVE}/homeV2DinoAdai.png`,
+  homeV2DinoGulu: `${ACTIVE}/homeV2DinoGulu.png`,
+  homeV2PedestalCenter: `${ACTIVE}/homeV2PedestalCenter.png`,
+  homeV2PedestalLeft: `${ACTIVE}/homeV2PedestalLeft.png`,
+  homeV2PedestalRight: `${ACTIVE}/homeV2PedestalRight.png`,
+  homeV2BadgeOrange: `${ACTIVE}/homeV2BadgeOrange.png`,
+  homeV2BadgeCoral: `${ACTIVE}/homeV2BadgeCoral.png`,
+  homeV2BadgeTeal: `${ACTIVE}/homeV2BadgeTeal.png`,
+  navBg: `${ACTIVE}/navBg.png`,
+  navWorks: `${ACTIVE}/navWorks.png`,
+  navHatch: `${ACTIVE}/navHatch.png`,
+  navParent: `${ACTIVE}/navParent.png`,
+  storyTitle: `${ACTIVE}/storyTitle.png`,
+  storyBubble: `${ACTIVE}/storyBubble.png`,
+  storyVoice: `${ACTIVE}/storyVoice.png`,
+  storyChoiceA: `${ACTIVE}/storyChoiceA.png`,
+  storyChoiceB: `${ACTIVE}/storyChoiceB.png`,
+  hatchSubtitlePlaque: `${ACTIVE}/hatchSubtitlePlaque.png`,
+  hatchLogo: `${ACTIVE}/hatchLogo.png`,
+  hatchMusic: `${ACTIVE}/hatchMusic.png`,
+  hatchEggIdle: `${ACTIVE}/egg-source.png`,
+  hatchEggCracking: `${ACTIVE}/hatchEggCracking.png?v=20260710-hatch-sequence`,
+  hatchEggSuccess: `${ACTIVE}/hatchEggSuccess.png?v=20260710-hatch-sequence`,
+  hatchControlPanel: `${ACTIVE}/hatchControlPanel.png`,
+  hatchButtonVoice: `${ACTIVE}/hatchButtonVoice.png`,
+  hatchButtonImage: `${ACTIVE}/hatchButtonImage.png`,
+  hatchButtonStart: `${ACTIVE}/hatchButtonStart.png`,
+  hatchStatusLoading: `${ACTIVE}/hatchStatusLoading.png`,
+  hatchStatusRecording: `${ACTIVE}/hatchStatusRecording.png`,
+  hatchStatusImageSelected: `${ACTIVE}/hatchStatusImageSelected.png`,
+  hatchStatusSuccess: `${ACTIVE}/hatchStatusSuccess.png`,
+  worksTitle: `${ACTIVE}/worksTitle.png`,
+  worksBoard: `${ACTIVE}/worksBoard.png`,
+  worksEmpty: `${ACTIVE}/worksEmpty.png`,
+  worksCardFeatured: `${ACTIVE}/worksCardFeatured.png`,
+  worksCardNormal: `${ACTIVE}/worksCardNormal.png`,
+  worksRibbonFeatured: `${ACTIVE}/worksRibbonFeatured.png`,
+  worksMetaDate: `${ACTIVE}/worksMetaDate.png`,
+  worksMetaPaw: `${ACTIVE}/worksMetaPaw.png`,
+  worksMetaCrown: `${ACTIVE}/worksMetaCrown.png`,
+  worksMetaHeart: `${ACTIVE}/worksMetaHeart.png`,
+  worksMetaLeaf: `${ACTIVE}/worksMetaLeaf.png`,
+  worksRefresh: `${ACTIVE}/worksRefresh.png`,
+  parentTitle: `${ACTIVE}/parentTitle.png`,
+  parentBoard: `${ACTIVE}/parentBoard.png`,
+  parentRowSound: `${ACTIVE}/parentRowSound.png`,
+  parentRowImage: `${ACTIVE}/parentRowImage.png`,
+  parentRowMusic: `${ACTIVE}/parentRowMusic.png`,
+  parentToggleOn: `${ACTIVE}/parentToggleOn.png`,
+  parentToggleOff: `${ACTIVE}/parentToggleOff.png`,
+  parentSlider: `${ACTIVE}/parentSlider.png`,
+  parentTime30: `${ACTIVE}/parentTime30.png`,
+  parentThemeIsland: `${ACTIVE}/parentThemeIsland.png`,
+  parentThemeForest: `${ACTIVE}/parentThemeForest.png`,
+  parentThemeSnow: `${ACTIVE}/parentThemeSnow.png`,
+  parentThemeDesert: `${ACTIVE}/parentThemeDesert.png`,
+  parentVoicePermission: `${ACTIVE}/parentVoicePermission.png`,
+  parentImagePermission: `${ACTIVE}/parentImagePermission.png`,
+  parentSave: `${ACTIVE}/parentSave.png`,
+  parentToastSaved: `${ACTIVE}/parentToastSaved.png`,
 };
 
 const demoWorks = [
@@ -267,34 +258,36 @@ function drawNavLayer() {
   if (!stage.ready || !stage.nav) return;
   stage.nav.replaceChildren();
   navImg("navBg", { x: 0, y: 0, w: 390, h: 160 });
-  navImg("navWorks", { x: 52, y: 49, w: 60, h: 58 });
-  navImg("navHatch", { x: 152, y: 18, w: 86, h: 96 });
-  navImg("navParent", { x: 274, y: 49, w: 68, h: 58 });
-  navImg("navLabelWorks", { x: 38, y: 108, w: 88, h: 38 });
-  navImg("navLabelHatch", { x: 150, y: 108, w: 88, h: 38 });
-  navImg("navLabelParent", { x: 264, y: 108, w: 88, h: 38 });
+  navImg("navWorks", { x: 53, y: 48, w: 48, h: 51 });
+  navImg("navHatch", { x: 160, y: 16, w: 70, h: 102 });
+  navImg("navParent", { x: 287, y: 49, w: 50, h: 50 });
 }
-
 function drawHomeScene() {
   img("bgHomeV2", { x: 0, y: 0, w: 390, h: 844 }, { className: "scene-bg" });
-  img("homeLogo", { x: 52, y: 64, w: 286, h: 118 });
-  img("homeMusic", { x: 340, y: 42, w: 48, h: 48 });
-  drawWrappedText(copy.intro, 195, 196, 300, 24, 1, { font: "bold 16px Arial, sans-serif", color: "#73512d" });
+  img("homeLogo", { x: 50, y: 62, w: 290, h: 112 });
+  img("homeMusic", { x: 334, y: 42, w: 52, h: 52 });
+  img("hatchSubtitlePlaque", { x: 72, y: 174, w: 246, h: 56 });
+  drawWrappedText(copy.intro, 195, 215, 218, 26, 1, {
+    className: "home-guide-plaque-text",
+    font: "900 16px Arial, Microsoft YaHei, sans-serif",
+    color: "#fff7e6",
+    textShadow: "0 2px 0 rgba(92, 52, 24, 0.58)"
+  });
 
   img("homeV2PedestalCenter", { x: 120, y: 360, w: 150, h: 76 });
   img("homeV2DinoXiaobao", { x: 135, y: 250, w: 120, h: 145 });
   img("homeV2BadgeOrange", { x: 129, y: 416, w: 132, h: 56 });
-  drawWrappedText(copy.dinos.xiaobao, 195, 452, 108, 34, 1, { className: "dino-name", font: "900 26px Arial, sans-serif", color: "#fff7dc" });
+  drawWrappedText(copy.dinos.xiaobao, 195, 453, 108, 30, 1, { className: "dino-name", font: "900 24px Arial, Microsoft YaHei, sans-serif", color: "#fff7dc" });
 
   img("homeV2PedestalLeft", { x: 27, y: 542, w: 126, h: 67 });
   img("homeV2DinoAdai", { x: 40, y: 458, w: 100, h: 115 });
   img("homeV2BadgeCoral", { x: 29, y: 606, w: 126, h: 54 });
-  drawWrappedText(copy.dinos.adai, 92, 640, 100, 28, 1, { className: "dino-name", font: "900 22px Arial, sans-serif", color: "#fff7dc" });
+  drawWrappedText(copy.dinos.adai, 92, 642, 100, 30, 1, { className: "dino-name", font: "900 24px Arial, Microsoft YaHei, sans-serif", color: "#fff7dc" });
 
   img("homeV2PedestalRight", { x: 237, y: 542, w: 126, h: 67 });
   img("homeV2DinoGulu", { x: 254, y: 457, w: 92, h: 115 });
   img("homeV2BadgeTeal", { x: 235, y: 606, w: 126, h: 54 });
-  drawWrappedText(copy.dinos.gulu, 298, 640, 100, 28, 1, { className: "dino-name", font: "900 22px Arial, sans-serif", color: "#fff7dc" });
+  drawWrappedText(copy.dinos.gulu, 298, 642, 100, 30, 1, { className: "dino-name", font: "900 24px Arial, Microsoft YaHei, sans-serif", color: "#fff7dc" });
 }
 
 function drawStoryScene() {
@@ -303,26 +296,47 @@ function drawStoryScene() {
   img("storyBubble", { x: 36, y: 178, w: 180, h: 120 });
   img(dinoKey(state.selectedDino), { x: 150, y: 157, w: 190, h: 296 });
   drawWrappedText(state.activeText || copy.intro, 126, 218, 128, 20, 3, { font: "bold 14px sans-serif", color: "#72451f" });
-  img("storyVoice", { x: 44, y: 472, w: 188, h: 66 });
-  img("storyChoiceA", { x: 49, y: 560, w: 132, h: 50 });
-  img("storyChoiceB", { x: 210, y: 560, w: 134, h: 50 });
+  img("storyVoice", { x: 77, y: 468, w: 236, h: 78 });
+  img("storyChoiceA", { x: 52, y: 568, w: 142, h: 58 });
+  img("storyChoiceB", { x: 196, y: 568, w: 142, h: 58 });
 }
 
 function drawHatchScene() {
   img("bgHatch", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
-  img(eggKey(), { x: 65, y: 108, w: 260, h: 300 });
-  const statusAsset = statusKey();
-  if (statusAsset) {
-    const narrowStatus = statusAsset === "hatchStatusRecording" || statusAsset === "hatchStatusImageSelected";
-    img(statusAsset, narrowStatus ? { x: 105, y: 488, w: 180, h: 44 } : { x: 85, y: 488, w: 220, h: 44 });
-  }
-  img("hatchInputPanel", { x: 35, y: 542, w: 320, h: 160 });
-  img("hatchChipBlue", { x: 52, y: 575, w: 86, h: 42 });
-  img("hatchChipSing", { x: 140, y: 575, w: 86, h: 42 });
-  img("hatchChipHorn", { x: 244, y: 575, w: 86, h: 42 });
-  img("hatchButtonVoice", { x: 52, y: 628, w: 78, h: 48 });
-  img("hatchButtonImage", { x: 260, y: 628, w: 78, h: 48 });
-  img("hatchButtonStart", { x: 114, y: 626, w: 162, h: 52 });
+  img("hatchLogo", { x: 55, y: 28, w: 280, h: 108 });
+  img("hatchMusic", { x: 333, y: 22, w: 44, h: 44 });
+  img("hatchSubtitlePlaque", { x: 108, y: 140, w: 174, h: 55 });
+  drawWrappedText("\u5b75\u5316\u5c0f\u6050\u9f99", 195, 181, 150, 26, 1, { className: "hatch-subtitle-text", font: "900 20px Arial, Microsoft YaHei, sans-serif", color: "#fff7e6", textShadow: "0 2px 0 rgba(92, 52, 24, 0.58)" });
+  img(eggKey(), eggRect(), { className: hatchEggClass() });
+  drawHatchStatusText();
+  img("hatchControlPanel", { x: 25, y: 506, w: 340, h: 160 });
+  img("hatchButtonVoice", { x: 44, y: 593, w: 64, h: 50 });
+  img("hatchButtonStart", { x: 116, y: 591, w: 158, h: 54 });
+  const hatchButtonLabel = state.hatchStatus === "warming" || state.hatchStatus === "loading"
+    ? "\u5b75\u5316\u4e2d..."
+    : state.hatchStatus === "success"
+      ? "\u5b75\u5316\u6210\u529f"
+      : "\u5f00\u59cb\u5b75\u5316";
+  drawWrappedText(hatchButtonLabel, 195, 629, 132, 26, 1, { className: "hatch-primary-label", font: "900 19px Arial, Microsoft YaHei, sans-serif", color: "#fff7df", textShadow: "0 2px 0 rgba(74, 119, 20, 0.55)" });
+  img("hatchButtonImage", { x: 282, y: 593, w: 64, h: 50 });
+}
+
+function drawHatchStatusText() {
+  const text = ({
+    warming: "\u6050\u9f99\u86cb\u5728\u53d1\u5149...",
+    loading: "\u5494\u5693\uff01\u86cb\u58f3\u88c2\u5f00\u5566",
+    success: "\u5c0f\u6050\u9f99\u51fa\u751f\u5566\uff01",
+    recording: "\u6b63\u5728\u542c\u4f60\u8bf4...",
+    imageSelected: "\u56fe\u7247\u51c6\u5907\u597d\u5566",
+  })[state.hatchStatus];
+  if (!text) return;
+  img("hatchSubtitlePlaque", { x: 100, y: 454, w: 190, h: 50 }, { className: "hatch-status-plaque" });
+  drawWrappedText(text, 195, 488, 166, 20, 1, {
+    className: "hatch-status-text",
+    font: "900 15px Arial, Microsoft YaHei, sans-serif",
+    color: "#fff7e6",
+    textShadow: "0 2px 0 rgba(92, 52, 24, 0.58)"
+  });
 }
 
 function drawWorksScene() {
@@ -409,11 +423,24 @@ function eggKey() {
   return ({ idle: "hatchEggIdle", cracking: "hatchEggCracking", success: "hatchEggSuccess" })[state.eggState] || "hatchEggIdle";
 }
 
+function eggRect() {
+  return state.eggState === "idle"
+    ? { x: 50, y: 192, w: 290, h: 362 }
+    : { x: 65, y: 202, w: 260, h: 300 };
+}
+
+function hatchEggClass() {
+  if (state.hatchStatus === "warming") return "hatch-egg hatch-egg-warming";
+  if (state.eggState === "cracking") return "hatch-egg hatch-egg-cracking";
+  if (state.eggState === "success") return "hatch-egg hatch-egg-success";
+  return "hatch-egg";
+}
+
 function statusKey() {
   if (state.hatchStatus === "success" || state.eggState === "success") return "hatchStatusSuccess";
   if (state.hatchStatus === "recording") return "hatchStatusRecording";
   if (state.hatchStatus === "imageSelected") return "hatchStatusImageSelected";
-  if (state.hatchStatus === "loading" || state.eggState === "cracking") return "hatchStatusLoading";
+  if (state.hatchStatus === "warming" || state.hatchStatus === "loading" || state.eggState === "cracking") return "hatchStatusLoading";
   return null;
 }
 
@@ -579,19 +606,69 @@ function speakCurrentLine() {
   window.speechSynthesis.speak(utterance);
 }
 
-function captureVoice(targetInput) {
-  setAction(targetInput ? "hatch:voice" : "story:voice");
-  if (targetInput) {
-    state.eggState = "cracking";
-    state.hatchStatus = "recording";
+function clearHatchStatusTimer() {
+  if (state.hatchStatusTimer) {
+    window.clearTimeout(state.hatchStatusTimer);
+    state.hatchStatusTimer = null;
   }
+}
+
+function setHatchStatus(status, message = "") {
+  clearHatchStatusTimer();
+  state.hatchStatus = status;
+  document.body.dataset.hatchPhase = status;
+  $("hatchStatus").textContent = message;
+  drawStage();
+}
+
+function setHatchControlsDisabled(disabled) {
+  ["hatchButton", "hatchMicButton", "hatchImageButton", "hatchPrompt"].forEach((id) => {
+    const control = $(id);
+    if (control) control.disabled = disabled;
+  });
+}
+
+function setTransientHatchStatus(status, message = "", duration = 1200) {
+  setHatchStatus(status, message);
+  if (!duration) return;
+  state.hatchStatusTimer = window.setTimeout(() => {
+    if (state.hatchStatus === status) {
+      state.hatchStatus = "idle";
+      $("hatchStatus").textContent = "";
+      drawStage();
+    }
+  }, duration);
+}
+
+function captureVoice(targetInput) {
+  if (targetInput) {
+    captureHatchVoice(targetInput);
+    return;
+  }
+  setAction("story:voice");
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    if (targetInput) {
-      targetInput.value = copy.hatchDefault;
+    updateStoryLine(copy.voiceFallback, "story:voice");
+    return;
+  }
+  const rec = new SpeechRecognition();
+  rec.lang = "zh-CN";
+  rec.interimResults = false;
+  rec.onresult = (event) => {
+    const text = event.results?.[0]?.[0]?.transcript || "";
+    updateStoryLine(text, "story:voice");
+  };
+  rec.start();
+}
+
+function captureHatchVoice(targetInput) {
+  setAction("hatch:voice");
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    const text = window.prompt("\u8bf4\u8bf4\u4f60\u60f3\u8981\u7684\u5c0f\u6050\u9f99...", targetInput.value.trim());
+    if (text) {
+      targetInput.value = text.trim();
       updateHatchInputState();
-    } else {
-      updateStoryLine(copy.voiceFallback, "story:voice");
     }
     return;
   }
@@ -600,15 +677,18 @@ function captureVoice(targetInput) {
   rec.interimResults = false;
   rec.onresult = (event) => {
     const text = event.results?.[0]?.[0]?.transcript || "";
-    if (targetInput) {
-      targetInput.value = text;
+    if (text) {
+      const current = targetInput.value.trim();
+      targetInput.value = current ? `${current} ${text}` : text;
       updateHatchInputState();
-    } else {
-      updateStoryLine(text, "story:voice");
     }
   };
+  rec.onerror = () => setTransientHatchStatus("idle", "", 0);
+  rec.onend = () => {
+    if (state.hatchStatus === "recording") setTransientHatchStatus("idle", "", 0);
+  };
+  setHatchStatus("recording", "\u6b63\u5728\u542c\u4f60\u8bf4...");
   rec.start();
-  drawStage();
 }
 
 function updateHatchInputState() {
@@ -621,34 +701,66 @@ function addChip(value) {
   const input = $("hatchPrompt");
   const current = input.value.trim();
   input.value = current ? `${current} ${value}` : value;
-  state.eggState = "cracking";
-  state.hatchStatus = "loading";
   updateHatchInputState();
   setAction(`hatch:chip:${value}`);
 }
 
 function selectHatchImage() {
-  state.eggState = "cracking";
-  state.hatchStatus = "imageSelected";
-  $("hatchStatus").textContent = "\u5df2\u9009\u62e9\u56fe\u7247";
   setAction("hatch:image");
-  drawStage();
+  const picker = $("hatchImageInput");
+  if (!picker) return;
+  picker.value = "";
+  picker.click();
+}
+
+function handleHatchImageSelected(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  state.hatchImageName = file.name;
+  setTransientHatchStatus("imageSelected", "\u5df2\u9009\u62e9\u56fe\u7247", 1200);
 }
 
 function hatchDino() {
+  if (state.hatchStatus === "warming" || state.hatchStatus === "loading" || state.hatchStatus === "success") return;
   const input = $("hatchPrompt");
   const prompt = input.value.trim() || copy.hatchDefault;
-  const item = { id: `local-${Date.now()}`, name: copy.newDino, prompt, createdAt: new Date().toISOString() };
-  state.hatchedDinos.unshift(item);
-  state.eggState = "success";
-  state.hatchStatus = "success";
-  saveLocalHatched();
-  $("hatchStatus").textContent = copy.hatchReady;
-  input.value = "";
-  updateHatchInputState();
+  const item = {
+    id: `local-${Date.now()}`,
+    name: copy.newDino,
+    prompt,
+    image: state.hatchImageName,
+    createdAt: new Date().toISOString(),
+  };
+
+  state.eggState = "idle";
+  setHatchControlsDisabled(true);
+  setHatchStatus("warming", "\u6050\u9f99\u86cb\u6b63\u5728\u53d1\u5149...");
   setAction("hatch:submit");
-  loadArtifacts({ showBackend: false });
-  routeTo("works");
+
+  state.hatchStatusTimer = window.setTimeout(() => {
+    state.eggState = "cracking";
+    setHatchStatus("loading", "\u5494\u5693\uff01\u86cb\u58f3\u88c2\u5f00\u5566\uff01");
+
+    state.hatchStatusTimer = window.setTimeout(() => {
+      state.hatchedDinos.unshift(item);
+      state.eggState = "success";
+      saveLocalHatched();
+      input.value = "";
+      state.hatchImageName = "";
+      updateHatchInputState();
+      loadArtifacts({ showBackend: false });
+      setHatchStatus("success", "\u5c0f\u6050\u9f99\u51fa\u751f\u5566\uff01");
+
+      state.hatchStatusTimer = window.setTimeout(() => {
+        routeTo("works");
+        state.eggState = "idle";
+        state.hatchStatus = "idle";
+        document.body.dataset.hatchPhase = "idle";
+        setHatchControlsDisabled(false);
+        state.hatchStatusTimer = null;
+      }, 1800);
+    }, 1500);
+  }, 800);
 }
 
 function saveSettings() {
@@ -682,9 +794,12 @@ function bindEvents() {
   });
   $("hatchMicButton").addEventListener("click", () => captureVoice($("hatchPrompt")));
   $("hatchImageButton").addEventListener("click", selectHatchImage);
+  $("hatchImageInput").addEventListener("change", handleHatchImageSelected);
   $("hatchPrompt").addEventListener("input", updateHatchInputState);
+  $("hatchPrompt").addEventListener("keydown", (event) => { if (event.key === "Enter") event.preventDefault(); });
   document.querySelectorAll("[data-hatch-chip]").forEach((button) => button.addEventListener("click", () => addChip(button.dataset.hatchChip)));
-  $("hatchForm").addEventListener("submit", (event) => { event.preventDefault(); hatchDino(); });
+  $("hatchButton").addEventListener("click", hatchDino);
+  $("hatchForm").addEventListener("submit", (event) => event.preventDefault());
   $("refreshArtifacts").addEventListener("click", () => { setAction("works:refresh"); loadArtifacts({ showBackend: true }); });
   $("galleryTab").addEventListener("click", () => routeTo("home"));
   $("hatchTab").addEventListener("click", () => routeTo("hatch"));
