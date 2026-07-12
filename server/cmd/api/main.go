@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -92,16 +93,26 @@ type PlaySession struct {
 }
 
 type Artifact struct {
-	ID        string          `json:"id"`
-	SessionID string          `json:"session_id"`
-	Type      string          `json:"type"`
-	Title     string          `json:"title"`
-	Prompt    json.RawMessage `json:"prompt_json"`
-	FilePath  string          `json:"file_path"`
-	URL       string          `json:"url"`
-	Status    string          `json:"status"`
-	Provider  string          `json:"provider"`
-	CreatedAt string          `json:"created_at"`
+	ID             string          `json:"id"`
+	SessionID      string          `json:"session_id,omitempty"`
+	IdempotencyKey string          `json:"idempotency_key,omitempty"`
+	Type           string          `json:"type"`
+	Title          string          `json:"title"`
+	Prompt         json.RawMessage `json:"prompt_json"`
+	FilePath       string          `json:"file_path"`
+	SourceFilePath string          `json:"source_file_path,omitempty"`
+	URL            string          `json:"url"`
+	Status         string          `json:"status"`
+	Provider       string          `json:"provider"`
+	CreatedAt      string          `json:"created_at"`
+}
+
+type HatchRequest struct {
+	Prompt         string
+	IdempotencyKey string
+	ImageName      string
+	ImagePath      string
+	ImageData      []byte
 }
 
 type StoreData struct {
@@ -259,6 +270,34 @@ func (r *Repository) Artifact(id string) (*Artifact, bool) {
 	return a, ok
 }
 
+func (r *Repository) ArtifactByIdempotencyKey(key string) (*Artifact, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if key == "" {
+		return nil, false
+	}
+	for _, artifact := range r.data.Artifacts {
+		if artifact.IdempotencyKey == key {
+			return artifact, true
+		}
+	}
+	return nil, false
+}
+
+func (r *Repository) ArtifactBySessionID(sessionID string) (*Artifact, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if sessionID == "" {
+		return nil, false
+	}
+	for _, artifact := range r.data.Artifacts {
+		if artifact.SessionID == sessionID {
+			return artifact, true
+		}
+	}
+	return nil, false
+}
+
 func (r *Repository) DeleteArtifact(id string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -270,6 +309,9 @@ func (r *Repository) DeleteArtifact(id string) bool {
 	_ = r.saveLocked()
 	if a.FilePath != "" {
 		_ = os.Remove(filepath.Join(r.mediaDir, filepath.Base(a.FilePath)))
+	}
+	if a.SourceFilePath != "" {
+		_ = os.Remove(filepath.Join(r.mediaDir, filepath.Base(a.SourceFilePath)))
 	}
 	return true
 }
@@ -292,7 +334,7 @@ func (g SafetyGuard) CheckInput(text string) []string {
 
 func (g SafetyGuard) SafeOutput(text string) (string, []string) {
 	flags := g.check(text)
-	if len(flags) > 0 || utf8.RuneCountInString(text) > 48 {
+	if len(flags) > 0 || utf8.RuneCountInString(text) > 120 {
 		return "我们先停一下，去找爸爸妈妈一起看。", append(flags, "output_replaced")
 	}
 	return text, nil
@@ -327,11 +369,16 @@ func (g SafetyGuard) check(text string) []string {
 }
 
 type StoryEngine struct {
-	guard SafetyGuard
+	guard     SafetyGuard
+	generator StoryGenerator
 }
 
-func NewStoryEngine(guard SafetyGuard) StoryEngine {
-	return StoryEngine{guard: guard}
+func NewStoryEngine(guard SafetyGuard, generators ...StoryGenerator) StoryEngine {
+	var generator StoryGenerator
+	if len(generators) > 0 {
+		generator = generators[0]
+	}
+	return StoryEngine{guard: guard, generator: generator}
 }
 
 func dinos() []DinoProfile {
@@ -360,7 +407,7 @@ func findDino(code string) DinoProfile {
 	return dinos()[0]
 }
 
-func (e StoryEngine) Start(themeCode string, dinoCode string) (*PlaySession, error) {
+func (e StoryEngine) Start(ctx context.Context, themeCode string, dinoCode string) (*PlaySession, error) {
 	t := findTheme(themeCode)
 	dino := findDino(dinoCode)
 	state := StoryState{
@@ -370,7 +417,7 @@ func (e StoryEngine) Start(themeCode string, dinoCode string) (*PlaySession, err
 		ActiveDino: dino.Code,
 		TurnIndex:  0,
 		Mood:       "curious",
-		Choices:    []string{"去看看", "叫阿呆一起"},
+		Choices:    []string{"走近一点看看发光的恐龙蛋", "请阿呆陪我们一起去森林深处", "先安静听听树叶后面的声音"},
 		CardSeed: CardSeed{
 			Dino:   dino.Species,
 			Color:  "蓝色",
@@ -385,7 +432,23 @@ func (e StoryEngine) Start(themeCode string, dinoCode string) (*PlaySession, err
 		State:     state,
 		StartedAt: time.Now().Format(time.RFC3339),
 	}
-	text := fmt.Sprintf("%s里有一颗亮亮蛋。我们去看看吗？", t.Scene)
+	text := fmt.Sprintf("%s的树叶忽然闪起金色小光点，草丛里传来轻轻的叮咚声，一颗发光的恐龙蛋正在等朋友。我们先做什么呢？", t.Scene)
+	expression := "happy"
+	if e.generator != nil {
+		generated, err := e.generator.Generate(ctx, StoryGenerationRequest{Initial: true, Dino: dino, Theme: t, State: state, CreativeSeed: newStoryCreativeSeed()})
+		if err == nil {
+			if normalized, normalizeErr := normalizeGeneratedStory(generated, e.guard); normalizeErr == nil {
+				text = normalized.Text
+				state.Choices = normalized.Choices
+				session.State.Choices = normalized.Choices
+				expression = normalized.Expression
+			} else {
+				log.Printf("story provider output fallback: %v", normalizeErr)
+			}
+		} else {
+			log.Printf("story provider fallback: %v", err)
+		}
+	}
 	text, flags := e.guard.SafeOutput(text)
 	session.Turns = append(session.Turns, StoryTurn{
 		ID:          newID("turn"),
@@ -393,7 +456,7 @@ func (e StoryEngine) Start(themeCode string, dinoCode string) (*PlaySession, err
 		Speaker:     dino.Name,
 		Role:        "assistant",
 		Text:        text,
-		Expression:  "happy",
+		Expression:  expression,
 		Choices:     state.Choices,
 		SafetyFlags: flags,
 		CreatedAt:   time.Now().Format(time.RFC3339),
@@ -401,10 +464,10 @@ func (e StoryEngine) Start(themeCode string, dinoCode string) (*PlaySession, err
 	return session, nil
 }
 
-func (e StoryEngine) Next(session *PlaySession, input string) StoryTurn {
+func (e StoryEngine) Next(ctx context.Context, session *PlaySession, input string) StoryTurn {
 	flags := e.guard.CheckInput(input)
 	if len(flags) > 0 {
-		session.State.Choices = []string{"找爸爸妈妈", "轻轻抱抱"}
+		session.State.Choices = []string{"找爸爸妈妈", "轻轻抱抱", "回到首页"}
 		return StoryTurn{
 			ID:          newID("turn"),
 			SessionID:   session.ID,
@@ -426,11 +489,34 @@ func (e StoryEngine) Next(session *PlaySession, input string) StoryTurn {
 	session.State.CardSeed.Object = pick([]string{"彩虹蛋", "草莓篮子", "亮亮星", "月亮毯子"}, session.State.TurnIndex)
 	session.State.CardSeed.Color = pick([]string{"蓝色", "黄色", "绿色", "粉色"}, session.State.TurnIndex)
 
-	choiceA := pick([]string{"走彩虹桥", "找亮亮星", "轻轻敲门", "送小花"}, session.State.TurnIndex)
-	choiceB := pick([]string{"去小河边", "数一数", "叫咕噜", "盖小毯子"}, session.State.TurnIndex+1)
-	session.State.Choices = []string{choiceA, choiceB}
+	choiceA := pick([]string{"沿着彩虹桥寻找发光的脚印", "抬头找一找藏在树梢的亮星", "轻轻敲门问问树洞里的朋友", "把刚刚找到的小花送给新朋友"}, session.State.TurnIndex)
+	choiceB := pick([]string{"去小河边看看是谁在唱歌", "一起数一数路边的彩色石头", "请咕噜帮忙看看远处的山谷", "给怕冷的恐龙蛋盖上小毯子"}, session.State.TurnIndex+1)
+	choiceC := pick([]string{"问问阿呆有没有发现新线索", "唱一首轻轻的歌给森林听", "仔细看看草地上的小脚印", "轻轻抱一抱发光的恐龙蛋"}, session.State.TurnIndex+2)
+	session.State.Choices = []string{choiceA, choiceB, choiceC}
 
 	line := storyLine(nextDino.Name, input, session.State)
+	expression := pick([]string{"happy", "curious", "gentle", "sleepy"}, session.State.TurnIndex)
+	if e.generator != nil {
+		generated, err := e.generator.Generate(ctx, StoryGenerationRequest{
+			Dino:         nextDino,
+			Theme:        findTheme(session.State.Theme),
+			State:        session.State,
+			Input:        input,
+			CreativeSeed: newStoryCreativeSeed(),
+			RecentTurns:  session.Turns,
+		})
+		if err == nil {
+			if normalized, normalizeErr := normalizeGeneratedStory(generated, e.guard); normalizeErr == nil {
+				line = normalized.Text
+				session.State.Choices = normalized.Choices
+				expression = normalized.Expression
+			} else {
+				log.Printf("story provider output fallback: %v", normalizeErr)
+			}
+		} else {
+			log.Printf("story provider fallback: %v", err)
+		}
+	}
 	line, outFlags := e.guard.SafeOutput(line)
 	return StoryTurn{
 		ID:          newID("turn"),
@@ -438,7 +524,7 @@ func (e StoryEngine) Next(session *PlaySession, input string) StoryTurn {
 		Speaker:     nextDino.Name,
 		Role:        "assistant",
 		Text:        line,
-		Expression:  pick([]string{"happy", "curious", "gentle", "sleepy"}, session.State.TurnIndex),
+		Expression:  expression,
 		Choices:     session.State.Choices,
 		SafetyFlags: outFlags,
 		CreatedAt:   time.Now().Format(time.RFC3339),
@@ -455,10 +541,10 @@ func storyLine(speaker, input string, state StoryState) string {
 		clean = string(rs[:12])
 	}
 	lines := []string{
-		fmt.Sprintf("%s听到啦，我们%s。", speaker, clean),
-		fmt.Sprintf("哇，%s在发光。选一条路吧。", state.Scene),
-		fmt.Sprintf("小脚丫慢慢走，%s快到啦。", state.Goal),
-		fmt.Sprintf("%s说：好棒，再选一次。", speaker),
+		fmt.Sprintf("%s点点头，和我们一起%s。前方的树叶沙沙作响，露出三条铺着彩色石头的小路。接下来走哪一条呢？", speaker, clean),
+		fmt.Sprintf("我们刚刚选择了“%s”。%s的远处亮起温柔的星光，一串小脚印一直延伸到瀑布旁边。现在要怎样寻找新线索？", clean, state.Scene),
+		fmt.Sprintf("大家慢慢向前走，终于离“%s”更近了一点。草丛里有铃铛声、花香和闪光的小石头，我们先去看看什么？", state.Goal),
+		fmt.Sprintf("%s高兴地说：“这个办法真不错！”一只小鸟从树梢飞下来，告诉大家前面还有新的秘密。我们想先做哪件事？", speaker),
 	}
 	return lines[state.TurnIndex%len(lines)]
 }
@@ -567,6 +653,176 @@ func (m MediaService) Transcribe(ctx context.Context, header *multipart.FileHead
 	return out.Text, false, nil
 }
 
+func (m MediaService) GenerateHatch(ctx context.Context, req HatchRequest) (*Artifact, error) {
+	prompt := strings.TrimSpace(req.Prompt)
+	if prompt == "" {
+		prompt = "蓝色 会唱歌"
+	}
+	safePrompt, flags := m.guard.SafePrompt(prompt)
+	seed := hatchSeed(prompt, req.ImageName != "")
+	promptJSON, _ := json.Marshal(map[string]interface{}{
+		"text":            prompt,
+		"safe_prompt":     safePrompt,
+		"image_name":      req.ImageName,
+		"safety_flags":    flags,
+		"idempotency_key": req.IdempotencyKey,
+	})
+	artifact := &Artifact{
+		ID:             newID("art"),
+		IdempotencyKey: req.IdempotencyKey,
+		Type:           "hatched_dino",
+		Title:          "新小恐龙",
+		Prompt:         promptJSON,
+		SourceFilePath: req.ImagePath,
+		Status:         "ready",
+		Provider:       "local-svg",
+		CreatedAt:      time.Now().Format(time.RFC3339),
+	}
+
+	if os.Getenv("OPENAI_API_KEY") != "" && os.Getenv("DINODOO_IMAGE_PROVIDER") == "openai" {
+		filename, err := m.generateOpenAIHatchImage(ctx, safePrompt, req.ImagePath, artifact.ID)
+		if err == nil {
+			artifact.FilePath = filename
+			artifact.URL = "/media/" + filename
+			artifact.Provider = "openai"
+			return artifact, nil
+		}
+		log.Printf("hatch image provider fallback: %v", err)
+	}
+
+	filename, err := m.generateSVGCard(seed, artifact.ID)
+	if err != nil {
+		return nil, err
+	}
+	artifact.FilePath = filename
+	artifact.URL = "/media/" + filename
+	return artifact, nil
+}
+
+func hatchSeed(prompt string, hasImage bool) CardSeed {
+	seed := CardSeed{
+		Dino:   "小恐龙",
+		Color:  "蓝色",
+		Action: "开心地挥手",
+		Object: "闪亮恐龙蛋",
+	}
+	for _, candidate := range []string{"蓝色", "粉色", "绿色", "黄色", "橙色", "紫色"} {
+		if strings.Contains(prompt, candidate) {
+			seed.Color = candidate
+			break
+		}
+	}
+	switch {
+	case strings.Contains(prompt, "三角"):
+		seed.Dino = "小三角龙"
+	case strings.Contains(prompt, "腕龙") || strings.Contains(prompt, "长颈"):
+		seed.Dino = "小腕龙"
+	case strings.Contains(prompt, "霸王"):
+		seed.Dino = "小霸王龙"
+	}
+	switch {
+	case strings.Contains(prompt, "唱歌"):
+		seed.Action = "拿着麦克风唱歌"
+	case strings.Contains(prompt, "跳舞"):
+		seed.Action = "开心地跳舞"
+	case strings.Contains(prompt, "飞"):
+		seed.Action = "张开小翅膀"
+	case strings.Contains(prompt, "长角"):
+		seed.Action = "顶着圆圆的小角"
+	}
+	if hasImage {
+		seed.Object = "参考图片里的可爱元素"
+	}
+	return seed
+}
+
+func (m MediaService) generateOpenAIHatchImage(ctx context.Context, prompt, sourcePath, id string) (string, error) {
+	if sourcePath == "" {
+		return m.generateOpenAIImage(ctx, prompt, id)
+	}
+
+	source, err := os.Open(filepath.Join(m.mediaDir, filepath.Base(sourcePath)))
+	if err != nil {
+		return "", err
+	}
+	defer source.Close()
+
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+	part, err := writer.CreateFormFile("image", filepath.Base(sourcePath))
+	if err != nil {
+		return "", err
+	}
+	if _, err := io.Copy(part, source); err != nil {
+		return "", err
+	}
+	_ = writer.WriteField("model", env("OPENAI_IMAGE_MODEL", "gpt-image-1"))
+	_ = writer.WriteField("prompt", prompt)
+	_ = writer.WriteField("size", env("OPENAI_IMAGE_SIZE", "1024x1024"))
+	_ = writer.WriteField("response_format", "b64_json")
+	if err := writer.Close(); err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, env("OPENAI_BASE_URL", "https://api.openai.com/v1")+"/images/edits", &buf)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("OPENAI_API_KEY"))
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	res, err := m.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+	if res.StatusCode >= 300 {
+		body, _ := io.ReadAll(io.LimitReader(res.Body, 512))
+		return "", fmt.Errorf("image edit provider status %d: %s", res.StatusCode, string(body))
+	}
+	var out struct {
+		Data []struct {
+			B64JSON string `json:"b64_json"`
+			URL     string `json:"url"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&out); err != nil {
+		return "", err
+	}
+	if len(out.Data) == 0 {
+		return "", errors.New("image edit provider returned no data")
+	}
+	filename := id + ".png"
+	full := filepath.Join(m.mediaDir, filename)
+	if out.Data[0].B64JSON != "" {
+		imageBytes, err := base64.StdEncoding.DecodeString(out.Data[0].B64JSON)
+		if err != nil {
+			return "", err
+		}
+		return filename, os.WriteFile(full, imageBytes, 0o644)
+	}
+	if out.Data[0].URL == "" {
+		return "", errors.New("image edit provider returned no image payload")
+	}
+	imgReq, err := http.NewRequestWithContext(ctx, http.MethodGet, out.Data[0].URL, nil)
+	if err != nil {
+		return "", err
+	}
+	imgRes, err := m.httpClient.Do(imgReq)
+	if err != nil {
+		return "", err
+	}
+	defer imgRes.Body.Close()
+	if imgRes.StatusCode >= 300 {
+		return "", fmt.Errorf("image download status %d", imgRes.StatusCode)
+	}
+	target, err := os.Create(full)
+	if err != nil {
+		return "", err
+	}
+	defer target.Close()
+	_, err = io.Copy(target, imgRes.Body)
+	return filename, err
+}
 func (m MediaService) GenerateCard(ctx context.Context, session *PlaySession) (*Artifact, error) {
 	seed := session.State.CardSeed
 	rawPrompt := fmt.Sprintf("%s%s，%s，旁边有%s，竖版儿童恐龙卡片", seed.Color, seed.Dino, seed.Action, seed.Object)
@@ -695,10 +951,11 @@ func (m MediaService) generateSVGCard(seed CardSeed, id string) (string, error) 
 }
 
 type App struct {
-	repo   *Repository
-	story  StoryEngine
-	media  MediaService
-	static string
+	repo    *Repository
+	story   StoryEngine
+	media   MediaService
+	static  string
+	hatchMu sync.Mutex
 }
 
 func main() {
@@ -715,7 +972,7 @@ func main() {
 	guard := NewSafetyGuard()
 	app := &App{
 		repo:   repo,
-		story:  NewStoryEngine(guard),
+		story:  NewStoryEngine(guard, NewOpenAIStoryGeneratorFromEnv()),
 		media:  NewMediaService(repo.mediaDir, guard),
 		static: staticDir,
 	}
@@ -744,6 +1001,7 @@ func (a *App) routes(mux *http.ServeMux) {
 		writeJSON(w, http.StatusOK, a.repo.Settings())
 	})
 	mux.HandleFunc("PUT /api/v1/parent/settings", a.updateSettings)
+	mux.HandleFunc("POST /api/v1/hatches", a.createHatch)
 	mux.HandleFunc("POST /api/v1/play-sessions", a.createSession)
 	mux.HandleFunc("GET /api/v1/play-sessions/{id}", a.getSession)
 	mux.HandleFunc("POST /api/v1/play-sessions/{id}/turns", a.createTurn)
@@ -756,6 +1014,176 @@ func (a *App) routes(mux *http.ServeMux) {
 	mux.Handle("/", http.FileServer(http.Dir(a.static)))
 }
 
+const (
+	maxHatchUploadBytes  = 8 << 20
+	maxHatchRequestBytes = maxHatchUploadBytes + (1 << 20)
+	maxHatchPromptRunes  = 200
+)
+
+type requestError struct {
+	status int
+	err    error
+}
+
+func (e requestError) Error() string {
+	return e.err.Error()
+}
+
+func (a *App) createHatch(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxHatchRequestBytes)
+	hatchReq, err := parseHatchRequest(r)
+	if err != nil {
+		status := http.StatusBadRequest
+		var reqErr requestError
+		if errors.As(err, &reqErr) {
+			status = reqErr.status
+		}
+		writeError(w, status, err)
+		return
+	}
+
+	a.hatchMu.Lock()
+	defer a.hatchMu.Unlock()
+
+	if existing, ok := a.repo.ArtifactByIdempotencyKey(hatchReq.IdempotencyKey); ok {
+		writeJSON(w, http.StatusOK, map[string]interface{}{"artifact": existing, "replayed": true})
+		return
+	}
+
+	if len(hatchReq.ImageData) > 0 {
+		filename, err := saveHatchReference(a.repo.mediaDir, hatchReq.ImageData)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		hatchReq.ImagePath = filename
+	}
+
+	artifact, err := a.media.GenerateHatch(r.Context(), hatchReq)
+	if err != nil {
+		removeMediaFile(a.repo.mediaDir, hatchReq.ImagePath)
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if err := a.repo.SaveArtifact(artifact); err != nil {
+		removeMediaFile(a.repo.mediaDir, artifact.FilePath)
+		removeMediaFile(a.repo.mediaDir, artifact.SourceFilePath)
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]interface{}{"artifact": artifact, "replayed": false})
+}
+
+func parseHatchRequest(r *http.Request) (HatchRequest, error) {
+	var req HatchRequest
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil {
+		return req, requestError{status: http.StatusUnsupportedMediaType, err: errors.New("unsupported content type")}
+	}
+
+	switch mediaType {
+	case "application/json":
+		var body struct {
+			Prompt         string `json:"prompt"`
+			IdempotencyKey string `json:"idempotency_key"`
+		}
+		decoder := json.NewDecoder(r.Body)
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&body); err != nil {
+			return req, bodyReadError(err)
+		}
+		req.Prompt = body.Prompt
+		req.IdempotencyKey = body.IdempotencyKey
+	case "multipart/form-data":
+		if err := r.ParseMultipartForm(maxHatchUploadBytes); err != nil {
+			return req, bodyReadError(err)
+		}
+		if r.MultipartForm != nil {
+			defer r.MultipartForm.RemoveAll()
+		}
+		req.Prompt = r.FormValue("prompt")
+		req.IdempotencyKey = r.FormValue("idempotency_key")
+		file, header, err := r.FormFile("image")
+		if err != nil && !errors.Is(err, http.ErrMissingFile) {
+			return req, requestError{status: http.StatusBadRequest, err: errors.New("invalid image upload")}
+		}
+		if err == nil {
+			defer file.Close()
+			imageData, err := io.ReadAll(io.LimitReader(file, maxHatchUploadBytes+1))
+			if err != nil {
+				return req, requestError{status: http.StatusBadRequest, err: errors.New("could not read image")}
+			}
+			if len(imageData) > maxHatchUploadBytes {
+				return req, requestError{status: http.StatusRequestEntityTooLarge, err: errors.New("image exceeds 8 MiB")}
+			}
+			contentType := http.DetectContentType(imageData)
+			if !supportedHatchImageType(contentType) {
+				return req, requestError{status: http.StatusUnsupportedMediaType, err: errors.New("image must be PNG, JPEG, WebP, or GIF")}
+			}
+			req.ImageName = filepath.Base(header.Filename)
+			req.ImageData = imageData
+		}
+	default:
+		return req, requestError{status: http.StatusUnsupportedMediaType, err: errors.New("use application/json or multipart/form-data")}
+	}
+
+	if headerKey := strings.TrimSpace(r.Header.Get("Idempotency-Key")); req.IdempotencyKey == "" {
+		req.IdempotencyKey = headerKey
+	}
+	req.Prompt = strings.TrimSpace(req.Prompt)
+	req.IdempotencyKey = strings.TrimSpace(req.IdempotencyKey)
+	if req.IdempotencyKey == "" {
+		req.IdempotencyKey = newID("hatch")
+	}
+	if utf8.RuneCountInString(req.Prompt) > maxHatchPromptRunes {
+		return req, requestError{status: http.StatusUnprocessableEntity, err: errors.New("prompt is too long")}
+	}
+	if len(req.IdempotencyKey) > 128 {
+		return req, requestError{status: http.StatusUnprocessableEntity, err: errors.New("idempotency key is too long")}
+	}
+	return req, nil
+}
+
+func bodyReadError(err error) error {
+	if strings.Contains(strings.ToLower(err.Error()), "request body too large") {
+		return requestError{status: http.StatusRequestEntityTooLarge, err: errors.New("request exceeds upload limit")}
+	}
+	return requestError{status: http.StatusBadRequest, err: errors.New("invalid request body")}
+}
+
+func supportedHatchImageType(contentType string) bool {
+	switch contentType {
+	case "image/png", "image/jpeg", "image/webp", "image/gif":
+		return true
+	default:
+		return false
+	}
+}
+
+func saveHatchReference(mediaDir string, data []byte) (string, error) {
+	contentType := http.DetectContentType(data)
+	extension := map[string]string{
+		"image/png":  ".png",
+		"image/jpeg": ".jpg",
+		"image/webp": ".webp",
+		"image/gif":  ".gif",
+	}[contentType]
+	if extension == "" {
+		return "", errors.New("unsupported reference image")
+	}
+	filename := newID("ref") + extension
+	if err := os.WriteFile(filepath.Join(mediaDir, filename), data, 0o644); err != nil {
+		return "", err
+	}
+	return filename, nil
+}
+
+func removeMediaFile(mediaDir, filename string) {
+	if filename == "" {
+		return
+	}
+	_ = os.Remove(filepath.Join(mediaDir, filepath.Base(filename)))
+}
 func (a *App) updateSettings(w http.ResponseWriter, r *http.Request) {
 	var s Settings
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
@@ -775,7 +1203,7 @@ func (a *App) createSession(w http.ResponseWriter, r *http.Request) {
 		Dino  string `json:"dino"`
 	}
 	_ = json.NewDecoder(r.Body).Decode(&req)
-	session, err := a.story.Start(req.Theme, req.Dino)
+	session, err := a.story.Start(r.Context(), req.Theme, req.Dino)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
@@ -823,7 +1251,7 @@ func (a *App) createTurn(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now().Format(time.RFC3339),
 	}
 	session.Turns = append(session.Turns, userTurn)
-	assistantTurn := a.story.Next(session, req.Input)
+	assistantTurn := a.story.Next(r.Context(), session, req.Input)
 	session.Turns = append(session.Turns, assistantTurn)
 	if err := a.repo.SaveSession(session); err != nil {
 		writeError(w, http.StatusInternalServerError, err)
@@ -838,10 +1266,14 @@ func (a *App) finishSession(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, errors.New("session not found"))
 		return
 	}
-	if session.Status != "finished" {
-		session.Status = "finished"
-		session.EndedAt = time.Now().Format(time.RFC3339)
+	if session.Status == "finished" {
+		if artifact, ok := a.repo.ArtifactBySessionID(session.ID); ok {
+			writeJSON(w, http.StatusOK, map[string]interface{}{"session": session, "artifact": artifact, "replayed": true})
+			return
+		}
 	}
+	session.Status = "finished"
+	session.EndedAt = time.Now().Format(time.RFC3339)
 	artifact, err := a.media.GenerateCard(r.Context(), session)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)

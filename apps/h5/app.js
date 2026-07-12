@@ -7,11 +7,14 @@ const state = {
   artifacts: [],
   selectedDino: "xiaobao",
   activeText: "",
+  storyChoices: ["走近一点看看发光的恐龙蛋", "请阿呆陪我们一起去森林深处", "先安静听听树叶后面的声音"],
+  storyLoading: false,
   route: "home",
   eggState: "idle",
   hatchStatus: "idle",
   hatchStatusTimer: null,
   hatchImageName: "",
+  hatchImageFile: null,
   parentSaved: false,
 };
 
@@ -57,9 +60,9 @@ const assetSources = {
   homeV2BadgeCoral: `${ACTIVE}/homeV2BadgeCoral.png`,
   homeV2BadgeTeal: `${ACTIVE}/homeV2BadgeTeal.png`,
   navBg: `${ACTIVE}/navBg.png`,
+  navHome: `${ACTIVE}/navHome.png?v=20260712-child-nav-v1`,
   navWorks: `${ACTIVE}/navWorks.png`,
   navHatch: `${ACTIVE}/navHatch.png`,
-  navParent: `${ACTIVE}/navParent.png`,
   storyTitle: `${ACTIVE}/storyTitle.png`,
   storyBubble: `${ACTIVE}/storyBubble.png`,
   storyVoice: `${ACTIVE}/storyVoice.png`,
@@ -116,11 +119,11 @@ const demoWorks = [
   { id: "demo-gulu", name: copy.dinos.gulu, prompt: "\u60a0\u95f2\u7684\u5c0f\u8155\u9f99" },
 ];
 const screenRoutes = {
-  home: ["", "homeScreen"],
-  story: ["", "playScreen"],
+  home: ["homeTab", "homeScreen"],
+  story: ["homeTab", "playScreen"],
   hatch: ["hatchTab", "hatchScreen"],
-  works: ["galleryTab", "galleryScreen"],
-  parent: ["parentTab", "parentScreen"],
+  works: ["worksTab", "galleryScreen"],
+  parent: ["", "parentScreen"],
 };
 
 const stage = {
@@ -141,7 +144,7 @@ const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body || {}),
     });
-    if (!res.ok) throw new Error(await errorText(res));
+    if (!res.ok) throw await apiError(res);
     return res.json();
   },
   async put(path, body) {
@@ -150,13 +153,29 @@ const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body || {}),
     });
-    if (!res.ok) throw new Error(await errorText(res));
+    if (!res.ok) throw await apiError(res);
+    return res.json();
+  },
+  async postForm(path, form) {
+    const res = await fetch(path, { method: "POST", body: form });
+    if (!res.ok) throw await apiError(res);
     return res.json();
   },
 };
 
-function errorText(res) {
-  return res.text().catch(() => res.statusText || "request failed");
+async function errorText(res) {
+  try {
+    const body = await res.json();
+    return body?.error?.message || body?.message || res.statusText || "request failed";
+  } catch {
+    return res.statusText || "request failed";
+  }
+}
+
+async function apiError(res) {
+  const error = new Error(await errorText(res));
+  error.status = res.status;
+  return error;
 }
 
 function setAction(name) {
@@ -258,9 +277,9 @@ function drawNavLayer() {
   if (!stage.ready || !stage.nav) return;
   stage.nav.replaceChildren();
   navImg("navBg", { x: 0, y: 0, w: 390, h: 160 });
-  navImg("navWorks", { x: 53, y: 48, w: 48, h: 51 });
+  navImg("navHome", { x: 42, y: 32, w: 70, h: 70 });
   navImg("navHatch", { x: 160, y: 16, w: 70, h: 102 });
-  navImg("navParent", { x: 287, y: 49, w: 50, h: 50 });
+  navImg("navWorks", { x: 288, y: 48, w: 48, h: 51 });
 }
 function drawHomeScene() {
   img("bgHomeV2", { x: 0, y: 0, w: 390, h: 844 }, { className: "scene-bg" });
@@ -292,15 +311,32 @@ function drawHomeScene() {
 
 function drawStoryScene() {
   img("bgStory", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
-  img("storyTitle", { x: 50, y: 38, w: 290, h: 92 });
-  img("storyBubble", { x: 36, y: 178, w: 180, h: 120 });
-  img(dinoKey(state.selectedDino), { x: 150, y: 157, w: 190, h: 296 });
-  drawWrappedText(state.activeText || copy.intro, 126, 218, 128, 20, 3, { font: "bold 14px sans-serif", color: "#72451f" });
-  img("storyVoice", { x: 77, y: 468, w: 236, h: 78 });
-  img("storyChoiceA", { x: 52, y: 568, w: 142, h: 58 });
-  img("storyChoiceB", { x: 196, y: 568, w: 142, h: 58 });
-}
+  img("hatchSubtitlePlaque", { x: 78, y: 34, w: 234, h: 74 });
+  drawWrappedText("故事小路", 195, 84, 190, 28, 1, { className: "story-title-text", font: "900 22px Arial, Microsoft YaHei, sans-serif", color: "#fff7e6", textShadow: "0 2px 0 rgba(92, 52, 24, 0.58)" });
+  img("storyBubble", { x: 18, y: 136, w: 354, h: 214 });
+  img(dinoKey(state.selectedDino), { x: 300, y: 330, w: 62, h: 80 }, { className: "story-dino-art" });
+  drawWrappedText(state.activeText || copy.intro, 42, 184, 300, 24, 7, {
+    align: "left",
+    className: "story-dialog-text",
+    font: "800 16px Arial, Microsoft YaHei, sans-serif",
+    color: "#5f391d"
+  });
+  if (state.storyLoading) {
+    img("hatchSubtitlePlaque", { x: 108, y: 356, w: 174, h: 44 }, { className: "story-loading-plaque" });
+    drawWrappedText("故事继续中...", 195, 386, 148, 20, 1, { className: "story-loading-text", font: "900 15px Arial, Microsoft YaHei, sans-serif", color: "#fff7e6", textShadow: "0 2px 0 rgba(92, 52, 24, 0.58)" });
+  }
 
+  const choices = normalizeStoryChoices(state.storyChoices);
+  ["A", "B", "C"].forEach((suffix, index) => {
+    const label = $("choice" + suffix + "Label");
+    const button = $("choice" + suffix);
+    if (label) label.textContent = choices[index];
+    if (button) {
+      button.setAttribute("aria-label", "选择：" + choices[index]);
+      button.disabled = state.storyLoading;
+    }
+  });
+}
 function drawHatchScene() {
   img("bgHatch", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
   img("hatchLogo", { x: 55, y: 28, w: 280, h: 108 });
@@ -328,6 +364,7 @@ function drawHatchStatusText() {
     success: "\u5c0f\u6050\u9f99\u51fa\u751f\u5566\uff01",
     recording: "\u6b63\u5728\u542c\u4f60\u8bf4...",
     imageSelected: "\u56fe\u7247\u51c6\u5907\u597d\u5566",
+    error: "\u8bf7\u8c03\u6574\u4e00\u4e0b\u63cf\u8ff0",
   })[state.hatchStatus];
   if (!text) return;
   img("hatchSubtitlePlaque", { x: 100, y: 454, w: 190, h: 50 }, { className: "hatch-status-plaque" });
@@ -467,11 +504,39 @@ function drawWrappedText(text, x, y, maxWidth, lineHeight, maxLines, options = {
   stage.scene.appendChild(el);
 }
 
+const fallbackStoryChoices = ["走近一点看看发光的恐龙蛋", "请阿呆陪我们一起去森林深处", "先安静听听树叶后面的声音"];
+
+function normalizeStoryChoices(choices) {
+  const result = Array.isArray(choices)
+    ? choices.map((choice) => String(choice || "").trim()).filter(Boolean).slice(0, 3)
+    : [];
+  for (const fallback of fallbackStoryChoices) {
+    if (result.length >= 3) break;
+    if (!result.includes(fallback)) result.push(fallback);
+  }
+  return result.slice(0, 3);
+}
+
+function applyStorySession(session, turn = null) {
+  state.session = session || state.session;
+  const latestTurn = turn || session?.turns?.[session.turns.length - 1];
+  state.activeText = latestTurn?.text || state.activeText || copy.intro;
+  state.storyChoices = normalizeStoryChoices(latestTurn?.choices || session?.state?.choices);
+  state.storyLoading = false;
+  if (latestTurn?.speaker) $("speakerName").textContent = latestTurn.speaker;
+  $("dinoLine").textContent = state.activeText;
+  drawStage();
+}
+
 async function loadSession() {
+  state.storyLoading = true;
   try {
-    state.session = await api.post("/api/v1/play-sessions", { theme: "adventure", dino: state.selectedDino });
+    const session = await api.post("/api/v1/play-sessions", { theme: "adventure", dino: state.selectedDino });
+    applyStorySession(session);
   } catch {
     state.session = { id: "local-session" };
+    state.storyChoices = normalizeStoryChoices();
+    state.storyLoading = false;
   }
 }
 
@@ -550,12 +615,20 @@ async function loadArtifacts(options = {}) {
 function normalizeArtifact(item) {
   let prompt = "";
   try {
-    const raw = item.prompt_json ? JSON.parse(item.prompt_json) : null;
-    prompt = raw?.text || raw?.prompt || "";
+    const raw = typeof item.prompt_json === "string" ? JSON.parse(item.prompt_json) : item.prompt_json;
+    prompt = raw?.text || raw?.prompt || raw?.safe_prompt || "";
   } catch {
     prompt = "";
   }
-  return { id: item.id, name: item.title || copy.newDino, prompt: prompt || item.type || copy.hatchDefault };
+  return {
+    id: item.id,
+    name: item.title || copy.newDino,
+    prompt: prompt || item.type || copy.hatchDefault,
+    image: item.url || "",
+    provider: item.provider || "",
+    createdAt: item.created_at || "",
+    offline: false,
+  };
 }
 
 function renderSettings() {
@@ -581,13 +654,24 @@ function renderArtifacts() {
   drawStage();
 }
 
-function chooseDino(id) {
+async function chooseDino(id) {
   state.selectedDino = id;
   $("speakerName").textContent = copy.dinos[id] || copy.dinos.xiaobao;
-  $("dinoLine").textContent = copy.intro;
   state.activeText = copy.intro;
-  setAction(`home:dino:${id}`);
+  state.storyChoices = normalizeStoryChoices();
+  state.storyLoading = true;
+  $("dinoLine").textContent = state.activeText;
+  setAction("home:dino:" + id);
   routeTo("story");
+  try {
+    const session = await api.post("/api/v1/play-sessions", { theme: "adventure", dino: id });
+    applyStorySession(session);
+    setAction("story:session:" + id);
+  } catch {
+    state.session = { id: "local-session" };
+    state.storyLoading = false;
+    drawStage();
+  }
 }
 
 function updateStoryLine(text, action) {
@@ -597,14 +681,46 @@ function updateStoryLine(text, action) {
   drawStage();
 }
 
-function speakCurrentLine() {
-  setAction("story:replay");
-  if (!window.speechSynthesis) return;
-  const utterance = new SpeechSynthesisUtterance($("dinoLine").textContent || copy.intro);
-  utterance.lang = "zh-CN";
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
+function setStoryChoicesDisabled(disabled) {
+  state.storyLoading = disabled;
+  ["choiceA", "choiceB", "choiceC"].forEach((id) => {
+    const button = $(id);
+    if (button) button.disabled = disabled;
+  });
+  drawStage();
 }
+async function submitStoryInput(text, action, source = "choice") {
+  const input = String(text || "").trim();
+  if (!input) return;
+  setAction(action);
+  if (state.session?.id && state.session.id !== "local-session") {
+    setStoryChoicesDisabled(true);
+    try {
+      const data = await api.post("/api/v1/play-sessions/" + state.session.id + "/turns", { input, source });
+      applyStorySession(data.session, data.turn);
+      setAction(action + ":backend");
+      return;
+    } catch {
+      setAction(action + ":offline");
+    } finally {
+      setStoryChoicesDisabled(false);
+    }
+  }
+  const localLines = [copy.storyA, copy.storyB, "小恐龙发现了三颗亮晶晶的脚印。"];
+  const index = Math.max(0, state.storyChoices.indexOf(input));
+  state.storyChoices = normalizeStoryChoices([
+    ["走彩虹桥", "去小河边", "问问阿呆"][index % 3],
+    ["找亮亮星", "数一数", "唱一首歌"][index % 3],
+    ["轻轻敲门", "叫咕噜", "看小脚印"][index % 3],
+  ]);
+  updateStoryLine(localLines[index % localLines.length], action);
+}
+
+function submitStoryChoice(index) {
+  const choices = normalizeStoryChoices(state.storyChoices);
+  return submitStoryInput(choices[index], "story:choice-" + (index + 1), "choice");
+}
+
 
 function clearHatchStatusTimer() {
   if (state.hatchStatusTimer) {
@@ -638,27 +754,6 @@ function setTransientHatchStatus(status, message = "", duration = 1200) {
       drawStage();
     }
   }, duration);
-}
-
-function captureVoice(targetInput) {
-  if (targetInput) {
-    captureHatchVoice(targetInput);
-    return;
-  }
-  setAction("story:voice");
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    updateStoryLine(copy.voiceFallback, "story:voice");
-    return;
-  }
-  const rec = new SpeechRecognition();
-  rec.lang = "zh-CN";
-  rec.interimResults = false;
-  rec.onresult = (event) => {
-    const text = event.results?.[0]?.[0]?.transcript || "";
-    updateStoryLine(text, "story:voice");
-  };
-  rec.start();
 }
 
 function captureHatchVoice(targetInput) {
@@ -717,50 +812,105 @@ function handleHatchImageSelected(event) {
   const file = event.target.files?.[0];
   if (!file) return;
   state.hatchImageName = file.name;
+  state.hatchImageFile = file;
   setTransientHatchStatus("imageSelected", "\u5df2\u9009\u62e9\u56fe\u7247", 1200);
 }
 
-function hatchDino() {
+function hatchRequestId() {
+  if (window.crypto?.randomUUID) return `hatch-${window.crypto.randomUUID()}`;
+  return `hatch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function requestHatchArtifact(prompt, imageFile, idempotencyKey) {
+  let data;
+  if (imageFile) {
+    const form = new FormData();
+    form.append("prompt", prompt);
+    form.append("idempotency_key", idempotencyKey);
+    form.append("image", imageFile, imageFile.name);
+    data = await api.postForm("/api/v1/hatches", form);
+  } else {
+    data = await api.post("/api/v1/hatches", {
+      prompt,
+      idempotency_key: idempotencyKey,
+    });
+  }
+  if (!data?.artifact) throw new Error("孵化服务没有返回作品");
+  return normalizeArtifact(data.artifact);
+}
+
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function backendUnavailable(error) {
+  return !error?.status || [404, 502, 503, 504].includes(error.status);
+}
+
+async function hatchDino() {
   if (state.hatchStatus === "warming" || state.hatchStatus === "loading" || state.hatchStatus === "success") return;
   const input = $("hatchPrompt");
   const prompt = input.value.trim() || copy.hatchDefault;
-  const item = {
-    id: `local-${Date.now()}`,
-    name: copy.newDino,
-    prompt,
-    image: state.hatchImageName,
-    createdAt: new Date().toISOString(),
-  };
+  const imageFile = state.hatchImageFile;
+  const imageName = state.hatchImageName;
+  const idempotencyKey = hatchRequestId();
+  const requestOutcome = requestHatchArtifact(prompt, imageFile, idempotencyKey)
+    .then((item) => ({ item, error: null }))
+    .catch((error) => ({ item: null, error }));
 
   state.eggState = "idle";
   setHatchControlsDisabled(true);
   setHatchStatus("warming", "\u6050\u9f99\u86cb\u6b63\u5728\u53d1\u5149...");
   setAction("hatch:submit");
 
-  state.hatchStatusTimer = window.setTimeout(() => {
-    state.eggState = "cracking";
-    setHatchStatus("loading", "\u5494\u5693\uff01\u86cb\u58f3\u88c2\u5f00\u5566\uff01");
+  await wait(800);
+  state.eggState = "cracking";
+  setHatchStatus("loading", "\u5494\u5693\uff01\u86cb\u58f3\u88c2\u5f00\u5566\uff01");
+  await wait(1500);
 
-    state.hatchStatusTimer = window.setTimeout(() => {
-      state.hatchedDinos.unshift(item);
-      state.eggState = "success";
-      saveLocalHatched();
-      input.value = "";
-      state.hatchImageName = "";
-      updateHatchInputState();
-      loadArtifacts({ showBackend: false });
-      setHatchStatus("success", "\u5c0f\u6050\u9f99\u51fa\u751f\u5566\uff01");
+  const outcome = await requestOutcome;
+  let item = outcome.item;
+  if (outcome.error && !backendUnavailable(outcome.error)) {
+    state.eggState = "idle";
+    setHatchControlsDisabled(false);
+    setAction(`hatch:error:${outcome.error.status || "unknown"}`);
+    $("hatchStatus").title = outcome.error.message || "";
+    setTransientHatchStatus("error", "\u8bf7\u8c03\u6574\u4e00\u4e0b\u63cf\u8ff0", 2400);
+    return;
+  }
 
-      state.hatchStatusTimer = window.setTimeout(() => {
-        routeTo("works");
-        state.eggState = "idle";
-        state.hatchStatus = "idle";
-        document.body.dataset.hatchPhase = "idle";
-        setHatchControlsDisabled(false);
-        state.hatchStatusTimer = null;
-      }, 1800);
-    }, 1500);
-  }, 800);
+  if (!item) {
+    item = {
+      id: `local-${Date.now()}`,
+      name: copy.newDino,
+      prompt,
+      image: imageName,
+      provider: "offline",
+      offline: true,
+      createdAt: new Date().toISOString(),
+    };
+    state.hatchedDinos.unshift(item);
+    saveLocalHatched();
+    setAction("hatch:offline-fallback");
+  } else {
+    setAction("hatch:backend-success");
+  }
+
+  state.eggState = "success";
+  input.value = "";
+  state.hatchImageName = "";
+  state.hatchImageFile = null;
+  updateHatchInputState();
+  await loadArtifacts({ showBackend: true });
+  setHatchStatus("success", "\u5c0f\u6050\u9f99\u51fa\u751f\u5566\uff01");
+
+  await wait(1800);
+  routeTo("works");
+  state.eggState = "idle";
+  state.hatchStatus = "idle";
+  document.body.dataset.hatchPhase = "idle";
+  setHatchControlsDisabled(false);
+  state.hatchStatusTimer = null;
 }
 
 function saveSettings() {
@@ -782,17 +932,10 @@ function bindEvents() {
   document.querySelectorAll(".dino-choice").forEach((button) => button.addEventListener("click", () => chooseDino(button.dataset.dino)));
   $("musicButton").addEventListener("click", () => setAction("home:music"));
   $("homeButton").addEventListener("click", () => { setAction("story:home"); routeTo("home"); });
-  $("choiceA").addEventListener("click", () => updateStoryLine(copy.storyA, "story:choice-a"));
-  $("choiceB").addEventListener("click", () => updateStoryLine(copy.storyB, "story:choice-b"));
-  $("speakButton").addEventListener("click", speakCurrentLine);
-  $("micButton").addEventListener("click", () => captureVoice(null));
-  $("finishButton").addEventListener("click", () => { setAction("story:finish"); routeTo("works"); });
-  $("textForm").addEventListener("submit", (event) => {
-    event.preventDefault();
-    const text = $("textInput").value.trim();
-    if (text) updateStoryLine(text, "story:text");
-  });
-  $("hatchMicButton").addEventListener("click", () => captureVoice($("hatchPrompt")));
+  $("choiceA").addEventListener("click", () => submitStoryChoice(0));
+  $("choiceB").addEventListener("click", () => submitStoryChoice(1));
+  $("choiceC").addEventListener("click", () => submitStoryChoice(2));
+  $("hatchMicButton").addEventListener("click", () => captureHatchVoice($("hatchPrompt")));
   $("hatchImageButton").addEventListener("click", selectHatchImage);
   $("hatchImageInput").addEventListener("change", handleHatchImageSelected);
   $("hatchPrompt").addEventListener("input", updateHatchInputState);
@@ -801,9 +944,9 @@ function bindEvents() {
   $("hatchButton").addEventListener("click", hatchDino);
   $("hatchForm").addEventListener("submit", (event) => event.preventDefault());
   $("refreshArtifacts").addEventListener("click", () => { setAction("works:refresh"); loadArtifacts({ showBackend: true }); });
-  $("galleryTab").addEventListener("click", () => routeTo("home"));
+  $("homeTab").addEventListener("click", () => routeTo("home"));
   $("hatchTab").addEventListener("click", () => routeTo("hatch"));
-  $("parentTab").addEventListener("click", () => routeTo("parent"));
+  $("worksTab").addEventListener("click", () => routeTo("works"));
   $("saveSettings").addEventListener("click", saveSettings);
   ["themeSelect", "dailyLimit", "safetyToggle", "voiceToggle", "imageToggle"].forEach((id) => {
     $(id).addEventListener("change", () => {
@@ -829,7 +972,7 @@ async function init() {
   bindEvents();
   loadLocalHatched();
   await Promise.all([loadSession(), loadDinos(), loadSettings(), loadAssetImages()]);
-  await loadArtifacts({ showBackend: false });
+  await loadArtifacts({ showBackend: true });
   applyRouteFromHash();
 }
 

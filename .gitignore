@@ -10,3 +10,6 @@ server/api.exe
 design/previews/layout-qa/
 qa/browser/
 qa/static-source-vs-bases.png
+server/.gocache/
+server/api-local.exe
+design/generated/independent-elements-v1/

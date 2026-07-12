@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>&#24656;&#40857;&#21658;&#21658;&#23707;</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=20260712-story-random-v1" />
   </head>
   <body>
     <main id="app" class="shell">
@@ -29,15 +29,9 @@
             <div id="dinoAvatar" class="visually-hidden"><img id="dinoImage" src="/assets/game-elements/runtime-current/homeV2DinoXiaobao.png" alt="&#23567;&#26292;" /></div>
             <span id="speakerName" class="visually-hidden">&#23567;&#26292;</span>
             <p id="dinoLine" class="visually-hidden">&#36873;&#19968;&#21482;&#24656;&#40857;&#65292;&#25925;&#20107;&#23601;&#24320;&#22987;&#21862;&#12290;</p>
-            <button id="choiceA" class="image-button story-choice-a" type="button" aria-label="&#36873;&#25321;&#31532;&#19968;&#20010;&#25925;&#20107;&#26041;&#21521;"></button>
-            <button id="choiceB" class="image-button story-choice-b" type="button" aria-label="&#36873;&#25321;&#31532;&#20108;&#20010;&#25925;&#20107;&#26041;&#21521;"></button>
-            <button id="micButton" class="hotspot story-mic" type="button">&#35828;&#35805;</button>
-            <button id="speakButton" class="hotspot story-replay" type="button">&#37325;&#21548;</button>
-            <button id="finishButton" class="hotspot story-finish" type="button">&#23436;&#25104;</button>
-            <form id="textForm" class="hidden-form">
-              <input id="textInput" type="text" maxlength="32" placeholder="&#20063;&#21487;&#20197;&#25171;&#23383;&#32473;&#24656;&#40857;" />
-              <button type="submit">&#21457;&#36865;</button>
-            </form>
+            <button id="choiceA" class="image-button story-choice story-choice-a" type="button" aria-label="&#36873;&#25321;&#31532;&#19968;&#20010;&#25925;&#20107;&#26041;&#21521;"><span id="choiceALabel" class="story-choice-label">&#21435;&#30475;&#30475;</span></button>
+            <button id="choiceB" class="image-button story-choice story-choice-b" type="button" aria-label="&#36873;&#25321;&#31532;&#20108;&#20010;&#25925;&#20107;&#26041;&#21521;"><span id="choiceBLabel" class="story-choice-label">&#20808;&#21548;&#21548;</span></button>
+            <button id="choiceC" class="image-button story-choice story-choice-c" type="button" aria-label="&#36873;&#25321;&#31532;&#19977;&#20010;&#25925;&#20107;&#26041;&#21521;"><span id="choiceCLabel" class="story-choice-label">&#21483;&#38463;&#21574;</span></button>
           </div>
         </div>
 
@@ -76,12 +70,12 @@
 
         <nav class="bottom-nav" aria-label="&#20027;&#35201;&#21151;&#33021;">
           <div id="navLayer" class="nav-art" aria-hidden="true"></div>
-          <button id="galleryTab" class="nav-button" type="button"><span class="nav-label">&#20316;&#21697;</span></button>
+          <button id="homeTab" class="nav-button" type="button"><span class="nav-label">&#20048;&#22253;</span></button>
           <button id="hatchTab" class="nav-button active" type="button"><span class="nav-label">&#x5B75;&#x5316;</span></button>
-          <button id="parentTab" class="nav-button" type="button"><span class="nav-label">&#23478;&#38271;</span></button>
+          <button id="worksTab" class="nav-button" type="button"><span class="nav-label">&#20316;&#21697;</span></button>
         </nav>
       </section>
     </main>
-    <script src="/app.js?v=20260710-hatch-polished-status"></script>
+    <script src="/app.js?v=20260712-story-random-v1"></script>
   </body>
 </html>

@@ -1,0 +1,25 @@
+## 1. Story Provider
+
+- [x] 1.1 Add a story generator interface and OpenAI-compatible JSON provider with bounded context and timeout.
+- [x] 1.2 Validate and normalize generated story text, expression, and exactly three distinct short choices.
+- [x] 1.3 Use the provider for initial and subsequent turns with deterministic safe fallback.
+
+## 2. Story Screen
+
+- [x] 2.1 Remove the story speech, replay, and free-text controls and their event bindings.
+- [x] 2.2 Recompose the story text and three choices and show a loading state while the next turn is generated.
+
+## 3. Verification
+
+- [x] 3.1 Add tests for valid model output, contextual continuation, malformed output, timeout/error fallback, and three-choice invariants.
+- [x] 3.2 Document model configuration and run Go, JavaScript, OpenSpec, and browser interaction validation.
+
+## 4. Long Story Layout
+
+- [x] 4.1 Relax model and safety limits for longer story questions and complete answer phrases.
+- [x] 4.2 Stack the three answer controls vertically and support wrapped answer labels.
+- [x] 4.3 Add long-content tests and verify the 390x844 story layout in the browser.
+- [x] 4.4 Increase and left-align story question typography without colliding with the dinosaur artwork.
+- [x] 4.5 Replace stretched legacy choice bitmaps with readable scalable answer cards and verify all three interactions.
+- [x] 4.6 Add fresh creative seeds and anti-repetition sampling controls to every LLM story request.
+- [x] 4.7 Increase story question line spacing and verify long randomized turns at 390 x 844.
