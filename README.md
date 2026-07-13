@@ -86,15 +86,16 @@ To enable server-side media providers:
 
 ```powershell
 $env:OPENAI_API_KEY="..."
+$env:OPENAI_BASE_URL="https://agentllm.linkyun.co/v1"
+$env:OPENAI_STORY_MODEL="mimo-v2.5-pro"
+$env:OPENAI_STORY_TIMEOUT_SECONDS="30"
 $env:DINODOO_IMAGE_PROVIDER="openai"
-$env:OPENAI_STORY_MODEL="gpt-4o-mini"
-$env:OPENAI_STORY_TIMEOUT_SECONDS="12"
 $env:OPENAI_TTS_MODEL="gpt-4o-mini-tts"
 $env:OPENAI_STT_MODEL="gpt-4o-transcribe"
 $env:OPENAI_IMAGE_MODEL="gpt-image-1"
 scripts\start-local.ps1
 ```
 
-Provider keys stay on the backend. The H5 app never stores provider credentials.
+Provider keys stay on the backend. The H5 app never stores provider credentials. `scripts/start-local.ps1` also loads an ignored `.env.local` file from the repository root for local-only provider configuration.
 
 When OPENAI_API_KEY is configured, the initial story question and each next turn are generated from the selected dinosaur, story goal, current choice, and the six most recent turns. The backend accepts only short safe text with exactly three distinct choices; malformed, unsafe, or timed-out responses fall back to the deterministic local story engine.

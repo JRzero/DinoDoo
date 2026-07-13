@@ -33,6 +33,10 @@ The model is instructed to return structured text, choices, and expression field
 
 Every opening and follow-up request receives a cryptographically random creative seed. The provider prompt requires a fresh event, place, clue, and wording while positive presence and frequency penalties reduce repeated phrases. This preserves continuity through recent context without making repeated sessions identical.
 
+### Animate the story companion without moving its layout slot
+
+The selected dinosaur uses subtle foot-anchored motion: a slow idle sway and immediate bounded left-right pacing while the next turn loads. The image slot remains fixed so animation cannot shift the question or answer layout. Reduced-motion preferences disable decorative idle motion but keep the short-lived thinking feedback visible.
+
 ### Pass bounded recent context
 
 The request includes the active dinosaur profile, theme scene and goal, turn number, the child's selected choice, and only the most recent six turns. This provides continuity without unbounded prompt growth.
@@ -43,7 +47,7 @@ Missing credentials, timeout, non-2xx response, invalid JSON, unsafe output, or 
 
 ### Use choice-only interaction in H5
 
-The story speech button, hidden text form, browser speech recognition, and replay bindings are removed from the story route. The three answer controls are stacked vertically as full-width rows and a compact loading indicator appears while the next turn is generated.
+The story speech button, hidden text form, browser speech recognition, and replay bindings are removed from the story route. The three answer controls are stacked vertically as full-width rows. While the next turn is generated, the current story remains stable, choices are locked against duplicate submission, and the dinosaur motion provides feedback without an extra loading plaque.
 
 ### Render long story content as readable native controls
 
@@ -56,3 +60,11 @@ The story question uses a larger left-aligned text block so longer model-generat
 - [Generated text is too long for the story panel] -> impose generous but bounded server limits and clamp rendering to the available story panel.
 - [Unsafe or privacy-sensitive content] -> retain input/output safety guards and reject unsafe generated turns.
 - [No provider key in local development] -> preserve deterministic fallback and expose provider provenance only in server logs.
+
+
+## AgentLLM Runtime Configuration
+
+- Use the OpenAI-compatible base URL `https://agentllm.linkyun.co/v1` with Bearer tenant-key authentication.
+- Configure `mimo-v2.5-pro` as `OPENAI_STORY_MODEL` and allow a 30-second story timeout.
+- Keep provider credentials in ignored `.env.local`; the local startup script loads key/value pairs into the child API process.
+- Do not enable image, TTS, or STT providers as part of this story-only integration.

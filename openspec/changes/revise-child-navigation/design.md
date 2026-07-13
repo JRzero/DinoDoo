@@ -31,7 +31,7 @@ The parent route and screen remain implemented for future guarded access, but no
 
 ### Add a standalone transparent park icon
 
-The new `navHome.png` asset is composed independently on the existing navigation background. It is rendered at the same stable footprint as the existing works icon so the three columns remain visually balanced.
+The redesigned `navHomeV2.png` asset is composed independently on the existing navigation background. Its compact island-and-palm silhouette is rendered in a 64 x 64 contain box so its visible footprint remains balanced with the existing works icon.
 
 ## Risks / Trade-offs
 

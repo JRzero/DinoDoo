@@ -2,6 +2,7 @@
 
 - [x] 1.1 Create and validate a transparent standalone navHome icon matching the existing soft-clay icon family.
 - [x] 1.2 Compose the new home icon and existing hatch and works icons at stable navigation coordinates.
+- [x] 1.3 Replace the park icon with a simpler island-and-palm symbol and re-verify visual balance.
 
 ## 2. Navigation Behavior
 

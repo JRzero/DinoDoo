@@ -7,6 +7,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Root = Resolve-Path (Join-Path $PSScriptRoot "..")
+$LocalEnvFile = Join-Path $Root ".env.local"
+
+if (Test-Path -LiteralPath $LocalEnvFile) {
+    Get-Content -LiteralPath $LocalEnvFile | ForEach-Object {
+        $Line = $_.Trim()
+        if (-not $Line -or $Line.StartsWith("#") -or -not $Line.Contains("=")) { return }
+        $Name, $Value = $Line.Split("=", 2)
+        [Environment]::SetEnvironmentVariable($Name.Trim(), $Value.Trim(), "Process")
+    }
+}
 
 function Write-Step {
     param([string]$Message)

@@ -42,4 +42,19 @@ The H5 story screen SHALL present story text and exactly three generated choices
 
 #### Scenario: Next turn is loading
 - **WHEN** a selected choice is awaiting the next model-generated turn
-- **THEN** all three choices are disabled and a child-friendly loading message is shown
+- **THEN** all three choices are disabled, the current story remains visible, and no extra loading plaque interrupts the story
+
+### Requirement: Responsive story companion motion
+The H5 story screen SHALL animate the selected dinosaur with restrained, foot-anchored motion that does not alter the story layout.
+
+#### Scenario: Story screen is idle
+- **WHEN** a story turn is ready for a choice
+- **THEN** the dinosaur shows a subtle idle breathing and swaying motion
+
+#### Scenario: A child selects an answer
+- **WHEN** one of the three story choices is selected
+- **THEN** the dinosaur briefly reacts and then shows a gentle waiting motion until the next turn is ready
+
+#### Scenario: Reduced motion is preferred
+- **WHEN** the device requests reduced motion
+- **THEN** the dinosaur remains visually stable without repeated transforms

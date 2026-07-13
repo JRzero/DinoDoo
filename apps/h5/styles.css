@@ -424,11 +424,11 @@ body.asset-mode .component-page {
 }
 
 .works-refresh {
-  left: 126px;
-  top: 632px;
-  width: 138px;
-  height: 50px;
-  border-radius: 24px;
+  left: 116px;
+  top: 610px;
+  width: 158px;
+  height: 54px;
+  border-radius: 27px;
 }
 
 .works-live-list {
@@ -610,7 +610,7 @@ body.asset-mode .component-page {
   height: 54px;
   border-radius: 30px;
 }
-.works-refresh { left: 126px; top: 636px; width: 138px; height: 48px; }
+.works-refresh { left: 116px; top: 610px; width: 158px; height: 54px; }
 .works-live-list { left: 55px; top: 246px; width: 280px; min-height: 220px; opacity: 0; }
 .parent-theme { left: 70px; top: 522px; width: 250px; height: 34px; }
 .parent-limit { left: 68px; top: 482px; width: 270px; height: 40px; }
@@ -712,7 +712,6 @@ body.asset-mode .component-page {
   opacity: 0.82;
 }
 
-.scene-text.story-loading-text,
 .scene-text.story-title-text {
   display: block;
   overflow: visible;
@@ -723,10 +722,119 @@ body.asset-mode .component-page {
 
 .scene-art.story-dino-art {
   object-fit: contain;
+  transform-origin: 50% 92%;
+  will-change: transform;
 }
+
+.scene-art.story-dino-idle {
+  animation: story-dino-idle 3.2s ease-in-out infinite;
+}
+
+.scene-art.story-dino-loading {
+  animation: story-dino-thinking-walk 1.45s ease-in-out infinite;
+}
+
+
+@keyframes story-dino-idle {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  35% { transform: translateY(-2px) rotate(-0.7deg); }
+  70% { transform: translateY(0) rotate(0.7deg); }
+}
+
+@keyframes story-dino-thinking-walk {
+  0% { transform: translate(0, 0) scaleX(1) rotate(0); }
+  12% { transform: translate(-6px, -2px) scaleX(1) rotate(-1deg); }
+  24% { transform: translate(-12px, 0) scaleX(1) rotate(0); }
+  36% { transform: translate(-19px, -2px) scaleX(1) rotate(-1deg); }
+  48% { transform: translate(-26px, 0) scaleX(1) rotate(0); }
+  52% { transform: translate(-26px, 0) scaleX(-1) rotate(0); }
+  64% { transform: translate(-19px, -2px) scaleX(-1) rotate(-1deg); }
+  76% { transform: translate(-12px, 0) scaleX(-1) rotate(0); }
+  88% { transform: translate(-6px, -2px) scaleX(-1) rotate(-1deg); }
+  96% { transform: translate(0, 0) scaleX(-1) rotate(0); }
+  100% { transform: translate(0, 0) scaleX(1) rotate(0); }
+}
+
 
 .scene-text.story-dialog-text {
   line-height: 24px !important;
   letter-spacing: 0;
   text-shadow: 0 1px 0 rgba(255, 250, 232, 0.9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-art.story-dino-idle {
+    animation: none;
+    transform: none;
+  }
+}
+
+.scene-text.works-subtitle-text,
+.scene-text.works-featured-label,
+.scene-text.works-refresh-text {
+  display: block;
+  overflow: visible;
+  white-space: nowrap;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: initial;
+}
+
+
+/* Works carousel v1 */
+.works-page-button {
+  z-index: 28;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+}
+.works-prev { left: 37px; top: 529px; }
+.works-next { left: 295px; top: 529px; }
+.works-refresh { left: 116px; top: 615px; width: 158px; height: 54px; }
+.scene-art.works-carousel-arrow-next { transform: rotate(180deg); }
+.scene-art.works-carousel-dino { object-fit: contain; }
+.scene-art.works-page-dot { opacity: 0.28; }
+.scene-art.works-page-dot.active { opacity: 1; }
+.scene-text.works-card-name,
+.scene-text.works-card-description,
+.scene-text.works-page-count {
+  letter-spacing: 0;
+  text-align: center;
+}
+.scene-text.works-card-description {
+  line-height: 18px !important;
+}
+
+.scene-text.works-card-name,
+.scene-text.works-page-count {
+  display: block;
+  overflow: visible;
+  white-space: nowrap;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: initial;
+}
+.scene-text.works-card-name { height: 24px; }
+.scene-text.works-card-description {
+  display: block;
+  height: 36px;
+  max-height: 36px !important;
+  overflow: hidden;
+  white-space: normal;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: initial;
+}
+.scene-text.works-page-count { height: 20px; }
+
+
+/* Works content alignment v2 */
+.scene-text.works-card-name {
+  height: 22px;
+  line-height: 22px !important;
+}
+.scene-text.works-card-description {
+  height: 32px;
+  max-height: 32px !important;
+  line-height: 16px !important;
+  padding: 0 2px;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
 }

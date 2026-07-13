@@ -23,3 +23,19 @@
 - [x] 4.5 Replace stretched legacy choice bitmaps with readable scalable answer cards and verify all three interactions.
 - [x] 4.6 Add fresh creative seeds and anti-repetition sampling controls to every LLM story request.
 - [x] 4.7 Increase story question line spacing and verify long randomized turns at 390 x 844.
+
+## 5. AgentLLM Runtime Integration
+
+- [x] 5.1 Load ignored local environment configuration from the startup script.
+- [x] 5.2 Configure AgentLLM OpenAI-compatible base URL and mimo-v2.5-pro story model.
+- [x] 5.3 Verify model visibility, restart the API, and confirm a generated story turn.
+
+## 6. Story Dinosaur Motion
+
+- [x] 6.1 Add a subtle foot-anchored idle animation without changing the dinosaur layout slot.
+- [x] 6.2 Add choice feedback and next-turn loading motion using the existing story state.
+- [x] 6.3 Respect reduced-motion preferences and validate the interaction in the browser.
+
+- [x] 6.4 Remove the interstitial story-loading plaque while preserving duplicate-submit protection.
+- [x] 6.5 Replace the loading bounce with bounded left-right thinking movement.
+- [x] 6.6 Start thinking movement immediately and keep it visible under reduced-motion browser defaults.

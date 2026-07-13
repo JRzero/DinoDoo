@@ -298,3 +298,48 @@ All current QA screenshots match their source runtime previews exactly at the co
 - `DINODOO_QA_URL=http://localhost:18180 powershell -ExecutionPolicy Bypass -File scripts\run-h5-static-checks.ps1`
 
 final result: passed
+
+
+---
+
+# Works Carousel Product Design QA - 2026-07-12
+
+## Evidence
+
+- Reference: `C:/Users/65420/AppData/Local/Temp/codex-clipboard-e5f52458-2ded-440c-898e-79f8dfacad5e.png`
+- Implementation: `design/generated/works-carousel-v1/assembled-preview-first.png`
+- Side-by-side comparison: `design/generated/works-carousel-v1/design-qa-comparison.png`
+- Viewport: 390 x 844 application frame
+
+## Visual Review
+
+- Header logo, music control, subtitle plaque, tropical workshop background, cream-clay surfaces, and fixed navigation retain the established visual language.
+- The fixed three-card collage is replaced by one centered portrait card with stable dinosaur, name, and two-line description slots.
+- Previous and next controls are symmetrical, fully visible, and use one independent cream-clay raster asset.
+- Current/total count and paw indicators are centered between paging controls.
+- Refresh action is isolated below the pager and does not overlap card content or navigation.
+- No P0, P1, or P2 clipping, overlap, alignment, contrast, or interaction findings remain.
+
+## Interaction Review
+
+- Next advances 1 / 3 -> 2 / 3 -> 3 / 3.
+- Next wraps 3 / 3 -> 1 / 3.
+- Previous wraps 1 / 3 -> 3 / 3.
+- Refresh keeps the Works route and retains a valid focused page.
+- One active page indicator is present for every state.
+
+final result: passed
+
+
+---
+
+# Works Content Alignment QA - 2026-07-13
+
+- Evidence: `design/generated/works-carousel-v1/assembled-preview-layout-v2.png`
+- Dinosaur artwork is centered in a 116 x 132 fixed slot and remains inside the blue display area.
+- Title uses a dedicated 22px line; description uses a separate 32px two-line slot.
+- Long generation prompts remove trailing English metadata and remain clear of the decorative flower and card border.
+- Chinese dinosaur keywords map triceratops, long-neck dinosaurs, and tyrannosaurs to matching transparent assets.
+- Browser structural check on page 3 confirmed `dinoAdai`, title `?????`, a 190 x 32 description box, and no overlap.
+
+final result: passed

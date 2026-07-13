@@ -5,6 +5,7 @@ const state = {
   dinos: [],
   hatchedDinos: [],
   artifacts: [],
+  worksPage: 0,
   selectedDino: "xiaobao",
   activeText: "",
   storyChoices: ["走近一点看看发光的恐龙蛋", "请阿呆陪我们一起去森林深处", "先安静听听树叶后面的声音"],
@@ -60,7 +61,7 @@ const assetSources = {
   homeV2BadgeCoral: `${ACTIVE}/homeV2BadgeCoral.png`,
   homeV2BadgeTeal: `${ACTIVE}/homeV2BadgeTeal.png`,
   navBg: `${ACTIVE}/navBg.png`,
-  navHome: `${ACTIVE}/navHome.png?v=20260712-child-nav-v1`,
+  navHome: `${ACTIVE}/navHomeV2.png?v=20260712-park-icon-v2`,
   navWorks: `${ACTIVE}/navWorks.png`,
   navHatch: `${ACTIVE}/navHatch.png`,
   storyTitle: `${ACTIVE}/storyTitle.png`,
@@ -82,18 +83,14 @@ const assetSources = {
   hatchStatusRecording: `${ACTIVE}/hatchStatusRecording.png`,
   hatchStatusImageSelected: `${ACTIVE}/hatchStatusImageSelected.png`,
   hatchStatusSuccess: `${ACTIVE}/hatchStatusSuccess.png`,
-  worksTitle: `${ACTIVE}/worksTitle.png`,
-  worksBoard: `${ACTIVE}/worksBoard.png`,
-  worksEmpty: `${ACTIVE}/worksEmpty.png`,
-  worksCardFeatured: `${ACTIVE}/worksCardFeatured.png`,
-  worksCardNormal: `${ACTIVE}/worksCardNormal.png`,
-  worksRibbonFeatured: `${ACTIVE}/worksRibbonFeatured.png`,
-  worksMetaDate: `${ACTIVE}/worksMetaDate.png`,
+  worksCabinetV2: `${ACTIVE}/worksCabinetV2.png?v=20260712-works-v2`,
+  worksCardFeaturedV2: `${ACTIVE}/worksCardFeaturedV2.png?v=20260712-works-v2`,
+  worksCardCompactV2: `${ACTIVE}/worksCardCompactV2.png?v=20260712-works-v2`,
+  worksCarouselArrow: `${ACTIVE}/worksCarouselArrow.png?v=20260712-works-carousel-v1`,
   worksMetaPaw: `${ACTIVE}/worksMetaPaw.png`,
-  worksMetaCrown: `${ACTIVE}/worksMetaCrown.png`,
+  worksEmpty: `${ACTIVE}/worksEmpty.png`,
   worksMetaHeart: `${ACTIVE}/worksMetaHeart.png`,
   worksMetaLeaf: `${ACTIVE}/worksMetaLeaf.png`,
-  worksRefresh: `${ACTIVE}/worksRefresh.png`,
   parentTitle: `${ACTIVE}/parentTitle.png`,
   parentBoard: `${ACTIVE}/parentBoard.png`,
   parentRowSound: `${ACTIVE}/parentRowSound.png`,
@@ -277,7 +274,7 @@ function drawNavLayer() {
   if (!stage.ready || !stage.nav) return;
   stage.nav.replaceChildren();
   navImg("navBg", { x: 0, y: 0, w: 390, h: 160 });
-  navImg("navHome", { x: 42, y: 32, w: 70, h: 70 });
+  navImg("navHome", { x: 45, y: 38, w: 64, h: 64 });
   navImg("navHatch", { x: 160, y: 16, w: 70, h: 102 });
   navImg("navWorks", { x: 288, y: 48, w: 48, h: 51 });
 }
@@ -314,18 +311,17 @@ function drawStoryScene() {
   img("hatchSubtitlePlaque", { x: 78, y: 34, w: 234, h: 74 });
   drawWrappedText("故事小路", 195, 84, 190, 28, 1, { className: "story-title-text", font: "900 22px Arial, Microsoft YaHei, sans-serif", color: "#fff7e6", textShadow: "0 2px 0 rgba(92, 52, 24, 0.58)" });
   img("storyBubble", { x: 18, y: 136, w: 354, h: 214 });
-  img(dinoKey(state.selectedDino), { x: 300, y: 330, w: 62, h: 80 }, { className: "story-dino-art" });
+  const storyDinoClasses = [
+    "story-dino-art",
+    state.storyLoading ? "story-dino-loading" : "story-dino-idle",
+  ].filter(Boolean).join(" ");
+  img(dinoKey(state.selectedDino), { x: 300, y: 330, w: 62, h: 80 }, { className: storyDinoClasses });
   drawWrappedText(state.activeText || copy.intro, 42, 184, 300, 24, 7, {
     align: "left",
     className: "story-dialog-text",
     font: "800 16px Arial, Microsoft YaHei, sans-serif",
     color: "#5f391d"
   });
-  if (state.storyLoading) {
-    img("hatchSubtitlePlaque", { x: 108, y: 356, w: 174, h: 44 }, { className: "story-loading-plaque" });
-    drawWrappedText("故事继续中...", 195, 386, 148, 20, 1, { className: "story-loading-text", font: "900 15px Arial, Microsoft YaHei, sans-serif", color: "#fff7e6", textShadow: "0 2px 0 rgba(92, 52, 24, 0.58)" });
-  }
-
   const choices = normalizeStoryChoices(state.storyChoices);
   ["A", "B", "C"].forEach((suffix, index) => {
     const label = $("choice" + suffix + "Label");
@@ -376,48 +372,134 @@ function drawHatchStatusText() {
   });
 }
 
+function worksList() {
+  return state.artifacts.length
+    ? state.artifacts
+    : (state.hatchedDinos.length ? state.hatchedDinos : demoWorks);
+}
+
+function clampWorksPage(items = worksList()) {
+  const count = items.length;
+  state.worksPage = count ? Math.max(0, Math.min(state.worksPage, count - 1)) : 0;
+  return state.worksPage;
+}
+
 function drawWorksScene() {
   img("bgWorks", { x: 0, y: 0, w: 390, h: 684 }, { className: "scene-bg" });
-  img("worksTitle", { x: 50, y: 128, w: 290, h: 92 });
-  img("worksBoard", { x: 40, y: 216, w: 310, h: 468 });
-  const works = state.artifacts.length ? state.artifacts : (state.hatchedDinos.length ? state.hatchedDinos : demoWorks);
+  img("hatchLogo", { x: 55, y: 18, w: 280, h: 108 });
+  img("hatchMusic", { x: 333, y: 22, w: 44, h: 44 });
+  img("hatchSubtitlePlaque", { x: 108, y: 132, w: 174, h: 55 });
+  drawWrappedText("\u4f5c\u54c1\u5c0f\u5c4b", 195, 173, 150, 26, 1, {
+    className: "works-subtitle-text",
+    font: "900 20px Arial, Microsoft YaHei, sans-serif",
+    color: "#fff7e6",
+    textShadow: "0 2px 0 rgba(92, 52, 24, 0.58)"
+  });
+
+  img("worksCabinetV2", { x: 28, y: 190, w: 334, h: 475 });
+  const works = worksList();
+  clampWorksPage(works);
   if (!works.length) {
     img("worksEmpty", { x: 70, y: 330, w: 250, h: 150 });
     drawWrappedText(copy.noWorks, 195, 416, 210, 20, 1, { font: "bold 15px sans-serif", color: "#8a673c" });
   } else {
-    drawWorksCards(works.slice(0, 3));
+    drawWorksCarousel(works);
   }
-  img("worksRefresh", { x: 126, y: 636, w: 138, h: 48 });
+
+  img("hatchButtonStart", { x: 116, y: 615, w: 158, h: 54 });
+  drawWrappedText("\u5237\u65b0\u4f5c\u54c1", 195, 654, 132, 24, 1, {
+    className: "works-refresh-text",
+    font: "900 18px Arial, Microsoft YaHei, sans-serif",
+    color: "#fff9e8",
+    textShadow: "0 2px 0 rgba(70, 120, 24, 0.55)"
+  });
 }
 
-function drawWorksCards(works) {
-  const featured = works[0] || {};
-  img("worksCardFeatured", { x: 55, y: 246, w: 280, h: 220 });
-  img("worksRibbonFeatured", { x: 62, y: 250, w: 120, h: 42 });
-  img(workDinoKey(featured, 0), { x: 142, y: 272, w: 112, h: 116 });
-  drawWorkText(featured, 82, 402, 172, "featured");
-  img("worksMetaCrown", { x: 132, y: 384, w: 24, h: 24 });
-  img("worksMetaDate", { x: 236, y: 418, w: 76, h: 26 });
-  img("worksMetaPaw", { x: 298, y: 384, w: 28, h: 28 });
-  [
-    { x: 55, y: 486, icon: "worksMetaHeart", item: works[1], index: 1 },
-    { x: 200, y: 486, icon: "worksMetaLeaf", item: works[2], index: 2 },
-  ].forEach((slot) => {
-    img("worksCardNormal", { x: slot.x, y: slot.y, w: 135, h: 190 });
-    if (slot.item) {
-      img(workDinoKey(slot.item, slot.index), { x: slot.x + 44, y: slot.y + 18, w: 58, h: 70 });
-      drawWorkText(slot.item, slot.x + 14, slot.y + 128, 94, "compact");
-      img(slot.icon, { x: slot.x + 96, y: slot.y + 126, w: 24, h: 24 });
-    } else {
-      drawWrappedText("\u65b0\u5b75\u5316", slot.x + 63, slot.y + 128, 100, 18, 1, { font: "bold 14px sans-serif", color: "#8a673c" });
-    }
+function drawWorksCarousel(works) {
+  const page = clampWorksPage(works);
+  const item = works[page];
+  img("worksCardCompactV2", { x: 61, y: 205, w: 268, h: 314 });
+  img("homeV2BadgeOrange", { x: 68, y: 210, w: 112, h: 46 });
+  drawWrappedText("\u6211\u7684\u6050\u9f99", 124, 242, 88, 20, 1, {
+    className: "works-featured-label",
+    font: "900 14px Arial, Microsoft YaHei, sans-serif",
+    color: "#fff8df",
+    textShadow: "0 2px 0 rgba(139, 77, 24, 0.52)"
   });
+  img(workDinoKey(item, page), { x: 137, y: 238, w: 116, h: 132 }, { className: "works-carousel-dino" });
+  drawWrappedText(worksDisplayTitle(item), 195, 440, 200, 22, 1, {
+    className: "works-card-name",
+    font: "900 18px Arial, Microsoft YaHei, sans-serif",
+    color: "#6f421f"
+  });
+  drawWrappedText(worksDisplayDescription(item), 195, 477, 190, 16, 2, {
+    className: "works-card-description",
+    font: "800 11px Arial, Microsoft YaHei, sans-serif",
+    color: "#8a673c"
+  });
+
+  img("worksCarouselArrow", { x: 37, y: 529, w: 58, h: 58 }, { className: "works-carousel-arrow" });
+  img("worksCarouselArrow", { x: 295, y: 529, w: 58, h: 58 }, { className: "works-carousel-arrow works-carousel-arrow-next" });
+  drawWrappedText(String(page + 1) + " / " + String(works.length), 195, 565, 70, 20, 1, {
+    className: "works-page-count",
+    font: "900 14px Arial, Microsoft YaHei, sans-serif",
+    color: "#7a4f29"
+  });
+  drawWorksPageDots(page, works.length);
+}
+
+function drawWorksPageDots(page, count) {
+  const visible = Math.min(count, 5);
+  const gap = 24;
+  const startX = 195 - ((visible - 1) * gap) / 2;
+  const active = count <= visible ? page : Math.min(page, visible - 1);
+  for (let index = 0; index < visible; index += 1) {
+    const size = index === active ? 28 : 18;
+    img("worksMetaPaw", {
+      x: startX + index * gap - size / 2,
+      y: 580 - size / 2,
+      w: size,
+      h: size,
+    }, { className: index === active ? "works-page-dot active" : "works-page-dot" });
+  }
+}
+
+function changeWorksPage(delta) {
+  const works = worksList();
+  if (works.length < 2) return;
+  state.worksPage = (state.worksPage + delta + works.length) % works.length;
+  setAction(delta > 0 ? "works:next" : "works:previous");
+  drawStage();
+}
+
+function worksDisplayTitle(item) {
+  const name = String(item?.name || item?.title || "").trim();
+  const prompt = worksChinesePrompt(item);
+  if (!name || name === copy.newDino || name === "\u4eca\u65e5\u6050\u9f99\u5361\u7247") {
+    return prompt.split(/[\uff0c,\u3002.!\uff01]/)[0].slice(0, 8) || copy.newDino;
+  }
+  return name.slice(0, 10);
+}
+
+function worksDisplayDescription(item) {
+  const prompt = worksChinesePrompt(item);
+  if (!prompt) return copy.hatchDefault;
+  return prompt.length > 28 ? prompt.slice(0, 27) + "\u2026" : prompt;
+}
+
+function worksChinesePrompt(item) {
+  return String(item?.prompt || item?.description || "")
+    .replace(/,[\s]*[A-Za-z][\s\S]*$/, "")
+    .replace(/[A-Za-z][A-Za-z\s,-]*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function workDinoKey(item, index) {
   const text = `${item?.id || ""} ${item?.name || ""} ${item?.title || ""} ${item?.prompt || ""}`;
-  if (text.includes("adai") || text.includes(copy.dinos.adai)) return "dinoAdai";
-  if (text.includes("gulu") || text.includes(copy.dinos.gulu)) return "dinoGulu";
+  if (text.includes("adai") || text.includes(copy.dinos.adai) || text.includes("\u4e09\u89d2\u9f99")) return "dinoAdai";
+  if (text.includes("gulu") || text.includes(copy.dinos.gulu) || /\u8155\u9f99|\u957f\u9888|\u96f7\u9f99/.test(text)) return "dinoGulu";
+  if (/\u9738\u738b\u9f99|\u66b4\u9f99/.test(text)) return "dinoXiaobao";
   return ["dinoXiaobao", "dinoAdai", "dinoGulu"][index % 3] || "dinoXiaobao";
 }
 
@@ -609,6 +691,7 @@ async function loadArtifacts(options = {}) {
   }
   const backendItems = options.showBackend ? list : [];
   state.artifacts = [...state.hatchedDinos, ...backendItems];
+  clampWorksPage();
   renderArtifacts();
 }
 
@@ -720,7 +803,6 @@ function submitStoryChoice(index) {
   const choices = normalizeStoryChoices(state.storyChoices);
   return submitStoryInput(choices[index], "story:choice-" + (index + 1), "choice");
 }
-
 
 function clearHatchStatusTimer() {
   if (state.hatchStatusTimer) {
@@ -943,6 +1025,8 @@ function bindEvents() {
   document.querySelectorAll("[data-hatch-chip]").forEach((button) => button.addEventListener("click", () => addChip(button.dataset.hatchChip)));
   $("hatchButton").addEventListener("click", hatchDino);
   $("hatchForm").addEventListener("submit", (event) => event.preventDefault());
+  $("worksPrev").addEventListener("click", () => changeWorksPage(-1));
+  $("worksNext").addEventListener("click", () => changeWorksPage(1));
   $("refreshArtifacts").addEventListener("click", () => { setAction("works:refresh"); loadArtifacts({ showBackend: true }); });
   $("homeTab").addEventListener("click", () => routeTo("home"));
   $("hatchTab").addEventListener("click", () => routeTo("hatch"));
