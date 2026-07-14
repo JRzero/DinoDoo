@@ -791,6 +791,34 @@ body.asset-mode .component-page {
 }
 .works-prev { left: 37px; top: 529px; }
 .works-next { left: 295px; top: 529px; }
+.works-adventure {
+  left: 84px;
+  top: 228px;
+  width: 222px;
+  height: 276px;
+  z-index: 24;
+  border-radius: 26px;
+}
+.works-delete {
+  position: absolute;
+  left: 274px;
+  top: 216px;
+  z-index: 34;
+  width: 48px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid #ffe2ae;
+  border-radius: 14px;
+  background: #e75f46;
+  color: #fff8e8;
+  box-shadow: 0 2px 0 #9b3b2e, 0 3px 7px rgba(86, 47, 20, 0.2);
+  font: 900 12px/24px Arial, Microsoft YaHei, sans-serif;
+  letter-spacing: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.works-delete:active { transform: translateY(1px); box-shadow: 0 1px 0 #9b3b2e; }
+.works-delete:focus-visible { outline: 3px solid #ffcf50; outline-offset: 2px; }
+.works-delete[hidden], .works-adventure[hidden] { display: none; }
 .works-refresh { left: 116px; top: 615px; width: 158px; height: 54px; }
 .scene-art.works-carousel-arrow-next { transform: rotate(180deg); }
 .scene-art.works-carousel-dino { object-fit: contain; }

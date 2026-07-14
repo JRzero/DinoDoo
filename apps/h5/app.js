@@ -7,6 +7,10 @@ const state = {
   artifacts: [],
   worksPage: 0,
   selectedDino: "xiaobao",
+  selectedStoryArtifact: null,
+  worksDeleteArmedId: "",
+  worksDeleteTimer: null,
+  worksStatus: "",
   activeText: "",
   storyChoices: ["走近一点看看发光的恐龙蛋", "请阿呆陪我们一起去森林深处", "先安静听听树叶后面的声音"],
   storyLoading: false,
@@ -152,6 +156,10 @@ const api = {
     });
     if (!res.ok) throw await apiError(res);
     return res.json();
+  },
+  async delete(path) {
+    const res = await fetch(path, { method: "DELETE" });
+    if (!res.ok) throw await apiError(res);
   },
   async postForm(path, form) {
     const res = await fetch(path, { method: "POST", body: form });
@@ -336,7 +344,13 @@ function drawStoryScene() {
     "story-dino-art",
     state.storyLoading ? "story-dino-loading" : "story-dino-idle",
   ].filter(Boolean).join(" ");
-  img(dinoKey(state.selectedDino), { x: 300, y: 330, w: 62, h: 80 }, { className: storyDinoClasses });
+  const storyFallbackKey = dinoKey(state.selectedDino);
+  const storyArtifactImage = workImageSource(state.selectedStoryArtifact);
+  if (storyArtifactImage) {
+    imgSource(storyArtifactImage, storyFallbackKey, { x: 292, y: 326, w: 70, h: 84 }, { className: storyDinoClasses });
+  } else {
+    img(storyFallbackKey, { x: 300, y: 330, w: 62, h: 80 }, { className: storyDinoClasses });
+  }
   drawWrappedText(state.activeText || copy.intro, 42, 184, 300, 24, 7, {
     align: "left",
     className: "story-dialog-text",
@@ -439,6 +453,7 @@ function drawWorksScene() {
 function drawWorksCarousel(works) {
   const page = clampWorksPage(works);
   const item = works[page];
+  syncWorksControls(item);
   img("worksCardCompactV2", { x: 61, y: 205, w: 268, h: 314 });
   img("homeV2BadgeOrange", { x: 68, y: 210, w: 112, h: 46 });
   drawWrappedText("\u6211\u7684\u6050\u9f99", 124, 242, 88, 20, 1, {
@@ -486,7 +501,131 @@ function drawWorksPageDots(page, count) {
   }
 }
 
+function currentWork() {
+  const works = worksList();
+  const page = clampWorksPage(works);
+  return works[page] || null;
+}
+
+function isDemoWork(item) {
+  return String(item?.id || "").startsWith("demo-");
+}
+
+function resetWorksDeleteConfirmation() {
+  if (state.worksDeleteTimer) window.clearTimeout(state.worksDeleteTimer);
+  state.worksDeleteTimer = null;
+  state.worksDeleteArmedId = "";
+}
+
+function syncWorksControls(item = currentWork()) {
+  const adventure = $("worksAdventure");
+  const remove = $("worksDelete");
+  const label = $("worksDeleteLabel");
+  const status = $("worksStatus");
+  if (adventure) {
+    adventure.hidden = !item;
+    adventure.setAttribute("aria-label", item ? "和" + (item.name || copy.newDino) + "开始冒险" : "开始冒险");
+  }
+  if (remove) {
+    remove.hidden = !item || isDemoWork(item);
+    remove.disabled = !item || isDemoWork(item);
+    remove.setAttribute("aria-label", state.worksDeleteArmedId === item?.id ? "确认删除这只恐龙" : "删除这只恐龙");
+  }
+  if (label) label.textContent = state.worksDeleteArmedId === item?.id ? "确认" : "删除";
+  if (status) status.textContent = state.worksStatus;
+}
+
+function workDinoCode(item, index = state.worksPage) {
+  const id = String(item?.id || "");
+  if (id === "demo-adai") return "adai";
+  if (id === "demo-gulu") return "gulu";
+  if (id === "demo-xiaobao") return "xiaobao";
+  const key = workDinoKey(item, index);
+  if (key === "dinoAdai") return "adai";
+  if (key === "dinoGulu") return "gulu";
+  return "xiaobao";
+}
+
+async function startWorkAdventure() {
+  const item = currentWork();
+  if (!item) return;
+  resetWorksDeleteConfirmation();
+  state.worksStatus = "";
+  if (isDemoWork(item)) {
+    await chooseDino(workDinoCode(item));
+    return;
+  }
+  state.selectedStoryArtifact = item;
+  state.selectedDino = workDinoCode(item);
+  const name = item.name || copy.newDino;
+  $("speakerName").textContent = name;
+  state.activeText = "和" + name + "一起出发吧！";
+  state.storyChoices = normalizeStoryChoices();
+  state.storyLoading = true;
+  $("dinoLine").textContent = state.activeText;
+  setAction("works:adventure:" + item.id);
+  routeTo("story");
+  try {
+    const body = {
+      theme: "adventure",
+      dino: state.selectedDino,
+      dino_name: name,
+      dino_description: worksDisplayDescription(item),
+    };
+    if (!item.offline) body.artifact_id = item.id;
+    const session = await api.post("/api/v1/play-sessions", body);
+    applyStorySession(session);
+  } catch {
+    state.session = { id: "local-session" };
+    state.storyLoading = false;
+    drawStage();
+  }
+}
+
+async function deleteCurrentWork() {
+  const item = currentWork();
+  if (!item || isDemoWork(item)) return;
+  if (state.worksDeleteArmedId !== item.id) {
+    resetWorksDeleteConfirmation();
+    state.worksDeleteArmedId = item.id;
+    state.worksStatus = "再次点击确认删除";
+    setAction("works:delete-arm:" + item.id);
+    state.worksDeleteTimer = window.setTimeout(() => {
+      if (state.worksDeleteArmedId === item.id) {
+        resetWorksDeleteConfirmation();
+        state.worksStatus = "";
+        syncWorksControls();
+      }
+    }, 3000);
+    syncWorksControls(item);
+    return;
+  }
+  resetWorksDeleteConfirmation();
+  state.worksStatus = "正在删除...";
+  syncWorksControls(item);
+  try {
+    if (item.offline) {
+      state.hatchedDinos = state.hatchedDinos.filter((work) => work.id !== item.id);
+      saveLocalHatched();
+    } else {
+      await api.delete("/api/v1/artifacts/" + encodeURIComponent(item.id));
+    }
+    state.artifacts = state.artifacts.filter((work) => work.id !== item.id);
+    if (state.selectedStoryArtifact?.id === item.id) state.selectedStoryArtifact = null;
+    state.worksStatus = "已删除";
+    clampWorksPage(state.artifacts);
+    setAction("works:delete:" + item.id);
+    renderArtifacts();
+  } catch {
+    state.worksStatus = "删除失败，请再试一次";
+    setAction("works:delete-error:" + item.id);
+    syncWorksControls(item);
+  }
+}
+
 function changeWorksPage(delta) {
+  resetWorksDeleteConfirmation();
+  state.worksStatus = "";
   const works = worksList();
   if (works.length < 2) return;
   state.worksPage = (state.worksPage + delta + works.length) % works.length;
@@ -765,6 +904,7 @@ function renderArtifacts() {
 }
 
 async function chooseDino(id) {
+  state.selectedStoryArtifact = null;
   state.selectedDino = id;
   $("speakerName").textContent = copy.dinos[id] || copy.dinos.xiaobao;
   state.activeText = copy.intro;
@@ -1051,6 +1191,8 @@ function bindEvents() {
   $("hatchForm").addEventListener("submit", (event) => event.preventDefault());
   $("worksPrev").addEventListener("click", () => changeWorksPage(-1));
   $("worksNext").addEventListener("click", () => changeWorksPage(1));
+  $("worksAdventure").addEventListener("click", startWorkAdventure);
+  $("worksDelete").addEventListener("click", deleteCurrentWork);
   $("refreshArtifacts").addEventListener("click", () => { setAction("works:refresh"); loadArtifacts({ showBackend: true }); });
   $("homeTab").addEventListener("click", () => routeTo("home"));
   $("hatchTab").addEventListener("click", () => routeTo("hatch"));

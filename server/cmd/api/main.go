@@ -61,14 +61,19 @@ type CardSeed struct {
 }
 
 type StoryState struct {
-	Theme      string   `json:"theme"`
-	Scene      string   `json:"scene"`
-	Goal       string   `json:"goal"`
-	ActiveDino string   `json:"active_dino"`
-	TurnIndex  int      `json:"turn_index"`
-	Mood       string   `json:"mood"`
-	Choices    []string `json:"choices"`
-	CardSeed   CardSeed `json:"card_seed"`
+	Theme                 string   `json:"theme"`
+	Scene                 string   `json:"scene"`
+	Goal                  string   `json:"goal"`
+	ActiveDino            string   `json:"active_dino"`
+	ActiveDinoName        string   `json:"active_dino_name,omitempty"`
+	ActiveDinoSpecies     string   `json:"active_dino_species,omitempty"`
+	ActiveDinoPersonality string   `json:"active_dino_personality,omitempty"`
+	ArtifactID            string   `json:"artifact_id,omitempty"`
+	CustomDino            bool     `json:"custom_dino,omitempty"`
+	TurnIndex             int      `json:"turn_index"`
+	Mood                  string   `json:"mood"`
+	Choices               []string `json:"choices"`
+	CardSeed              CardSeed `json:"card_seed"`
 }
 
 type StoryTurn struct {
@@ -439,16 +444,28 @@ func findDino(code string) DinoProfile {
 }
 
 func (e StoryEngine) Start(ctx context.Context, themeCode string, dinoCode string) (*PlaySession, error) {
+	return e.start(ctx, themeCode, findDino(dinoCode), "", false)
+}
+
+func (e StoryEngine) StartWithDino(ctx context.Context, themeCode string, dino DinoProfile, artifactID string) (*PlaySession, error) {
+	return e.start(ctx, themeCode, normalizeWorkDino(dino), artifactID, true)
+}
+
+func (e StoryEngine) start(ctx context.Context, themeCode string, dino DinoProfile, artifactID string, custom bool) (*PlaySession, error) {
 	t := findTheme(themeCode)
-	dino := findDino(dinoCode)
 	state := StoryState{
-		Theme:      t.Code,
-		Scene:      t.Scene,
-		Goal:       t.Goal,
-		ActiveDino: dino.Code,
-		TurnIndex:  0,
-		Mood:       "curious",
-		Choices:    []string{"走近一点看看发光的恐龙蛋", "请阿呆陪我们一起去森林深处", "先安静听听树叶后面的声音"},
+		Theme:                 t.Code,
+		Scene:                 t.Scene,
+		Goal:                  t.Goal,
+		ActiveDino:            dino.Code,
+		ActiveDinoName:        dino.Name,
+		ActiveDinoSpecies:     dino.Species,
+		ActiveDinoPersonality: dino.Personality,
+		ArtifactID:            artifactID,
+		CustomDino:            custom,
+		TurnIndex:             0,
+		Mood:                  "curious",
+		Choices:               []string{"走近一点看看发光的恐龙蛋", "请阿呆陪我们一起去森林深处", "先安静听听树叶后面的声音"},
 		CardSeed: CardSeed{
 			Dino:   dino.Species,
 			Color:  "蓝色",
@@ -495,6 +512,41 @@ func (e StoryEngine) Start(ctx context.Context, themeCode string, dinoCode strin
 	return session, nil
 }
 
+func normalizeWorkDino(dino DinoProfile) DinoProfile {
+	dino.Code = truncateRunes(strings.TrimSpace(dino.Code), 80)
+	dino.Name = truncateRunes(strings.TrimSpace(dino.Name), 16)
+	dino.Species = truncateRunes(strings.TrimSpace(dino.Species), 32)
+	dino.Personality = truncateRunes(strings.TrimSpace(dino.Personality), 80)
+	if dino.Code == "" {
+		dino.Code = "work-dino"
+	}
+	if dino.Name == "" {
+		dino.Name = "新小恐龙"
+	}
+	if dino.Species == "" {
+		dino.Species = "小恐龙"
+	}
+	if dino.Personality == "" {
+		dino.Personality = "勇敢、好奇、喜欢交朋友"
+	}
+	if dino.Catchphrase == "" {
+		dino.Catchphrase = "一起出发吧！"
+	}
+	if dino.VoiceStyle == "" {
+		dino.VoiceStyle = "warm"
+	}
+	return dino
+}
+
+func storyDinoFromState(state StoryState) DinoProfile {
+	return normalizeWorkDino(DinoProfile{
+		Code:        state.ActiveDino,
+		Name:        state.ActiveDinoName,
+		Species:     state.ActiveDinoSpecies,
+		Personality: state.ActiveDinoPersonality,
+	})
+}
+
 func (e StoryEngine) Next(ctx context.Context, session *PlaySession, input string) StoryTurn {
 	flags := e.guard.CheckInput(input)
 	if len(flags) > 0 {
@@ -513,8 +565,16 @@ func (e StoryEngine) Next(ctx context.Context, session *PlaySession, input strin
 	}
 
 	session.State.TurnIndex++
-	nextDino := dinos()[session.State.TurnIndex%len(dinos())]
-	session.State.ActiveDino = nextDino.Code
+	var nextDino DinoProfile
+	if session.State.CustomDino {
+		nextDino = storyDinoFromState(session.State)
+	} else {
+		nextDino = dinos()[session.State.TurnIndex%len(dinos())]
+		session.State.ActiveDino = nextDino.Code
+		session.State.ActiveDinoName = nextDino.Name
+		session.State.ActiveDinoSpecies = nextDino.Species
+		session.State.ActiveDinoPersonality = nextDino.Personality
+	}
 	session.State.CardSeed.Dino = nextDino.Species
 	session.State.CardSeed.Action = pick([]string{"挥挥小手", "抱着草莓", "数星星", "戴着小帽子"}, session.State.TurnIndex)
 	session.State.CardSeed.Object = pick([]string{"彩虹蛋", "草莓篮子", "亮亮星", "月亮毯子"}, session.State.TurnIndex)
@@ -1298,13 +1358,78 @@ func (a *App) updateSettings(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, a.repo.Settings())
 }
 
+func artifactStoryDescription(artifact *Artifact) string {
+	if artifact == nil || len(artifact.Prompt) == 0 {
+		return ""
+	}
+	var payload map[string]interface{}
+	if err := json.Unmarshal(artifact.Prompt, &payload); err != nil {
+		return ""
+	}
+	for _, key := range []string{"text", "prompt", "safe_prompt"} {
+		if value, ok := payload[key].(string); ok && strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func workDinoProfile(guard SafetyGuard, artifactID, name, description string) DinoProfile {
+	name = truncateRunes(strings.TrimSpace(name), 16)
+	description = truncateRunes(strings.TrimSpace(description), 80)
+	if safe, flags := guard.SafeOutput(name); len(flags) == 0 {
+		name = safe
+	} else {
+		name = "新小恐龙"
+	}
+	if safe, flags := guard.SafeOutput(description); len(flags) == 0 {
+		description = safe
+	} else {
+		description = "勇敢、好奇、喜欢交朋友"
+	}
+	return normalizeWorkDino(DinoProfile{
+		Code:        "work-" + truncateRunes(strings.TrimSpace(artifactID), 72),
+		Name:        name,
+		Species:     "小恐龙",
+		Personality: description,
+		Catchphrase: "一起出发吧！",
+		VoiceStyle:  "warm",
+	})
+}
+
 func (a *App) createSession(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Theme string `json:"theme"`
-		Dino  string `json:"dino"`
+		Theme           string `json:"theme"`
+		Dino            string `json:"dino"`
+		ArtifactID      string `json:"artifact_id"`
+		DinoName        string `json:"dino_name"`
+		DinoDescription string `json:"dino_description"`
 	}
-	_ = json.NewDecoder(r.Body).Decode(&req)
-	session, err := a.story.Start(r.Context(), req.Theme, req.Dino)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	var session *PlaySession
+	var err error
+	if req.ArtifactID != "" || req.DinoName != "" || req.DinoDescription != "" {
+		name := req.DinoName
+		description := req.DinoDescription
+		if req.ArtifactID != "" {
+			artifact, ok := a.repo.Artifact(req.ArtifactID)
+			if !ok {
+				writeError(w, http.StatusNotFound, errors.New("artifact not found"))
+				return
+			}
+			name = artifact.Title
+			if persisted := artifactStoryDescription(artifact); persisted != "" {
+				description = persisted
+			}
+		}
+		profile := workDinoProfile(a.story.guard, req.ArtifactID, name, description)
+		session, err = a.story.StartWithDino(r.Context(), req.Theme, profile, req.ArtifactID)
+	} else {
+		session, err = a.story.Start(r.Context(), req.Theme, req.Dino)
+	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
