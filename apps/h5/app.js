@@ -322,17 +322,17 @@ function drawHomeScene() {
   img("homeV2PedestalCenter", { x: 120, y: 360, w: 150, h: 76 });
   img("homeV2DinoXiaobao", { x: 135, y: 250, w: 120, h: 145 });
   img("homeV2BadgeOrange", { x: 129, y: 416, w: 132, h: 56 });
-  drawWrappedText(copy.dinos.xiaobao, 195, 453, 108, 30, 1, { className: "dino-name", font: "900 24px Arial, Microsoft YaHei, sans-serif", color: "#fff7dc" });
+  drawWrappedText(copy.dinos.xiaobao, 195, 456, 108, 30, 1, { className: "dino-name", font: "900 24px Arial, Microsoft YaHei, sans-serif", color: "#fff7dc" });
 
   img("homeV2PedestalLeft", { x: 27, y: 542, w: 126, h: 67 });
   img("homeV2DinoAdai", { x: 40, y: 458, w: 100, h: 115 });
   img("homeV2BadgeCoral", { x: 29, y: 606, w: 126, h: 54 });
-  drawWrappedText(copy.dinos.adai, 92, 642, 100, 30, 1, { className: "dino-name", font: "900 24px Arial, Microsoft YaHei, sans-serif", color: "#fff7dc" });
+  drawWrappedText(copy.dinos.adai, 92, 645, 100, 30, 1, { className: "dino-name", font: "900 24px Arial, Microsoft YaHei, sans-serif", color: "#fff7dc" });
 
   img("homeV2PedestalRight", { x: 237, y: 542, w: 126, h: 67 });
   img("homeV2DinoGulu", { x: 254, y: 457, w: 92, h: 115 });
   img("homeV2BadgeTeal", { x: 235, y: 606, w: 126, h: 54 });
-  drawWrappedText(copy.dinos.gulu, 298, 642, 100, 30, 1, { className: "dino-name", font: "900 24px Arial, Microsoft YaHei, sans-serif", color: "#fff7dc" });
+  drawWrappedText(copy.dinos.gulu, 298, 645, 100, 30, 1, { className: "dino-name", font: "900 24px Arial, Microsoft YaHei, sans-serif", color: "#fff7dc" });
 }
 
 function drawStoryScene() {
@@ -377,7 +377,7 @@ function drawHatchScene() {
   img(eggKey(), eggRect(), { className: hatchEggClass() });
   drawHatchStatusText();
   img("hatchControlPanel", { x: 25, y: 506, w: 340, h: 160 });
-  img("hatchButtonVoice", { x: 44, y: 591, w: 64, h: 54 });
+  img("hatchButtonVoice", { x: 47, y: 588, w: 58, h: 60 }, { className: "hatch-side-action" });
   img("hatchButtonStart", { x: 116, y: 591, w: 158, h: 54 });
   const hatchButtonLabel = state.hatchStatus === "warming" || state.hatchStatus === "loading"
     ? "\u5b75\u5316\u4e2d..."
@@ -385,7 +385,7 @@ function drawHatchScene() {
       ? "\u5b75\u5316\u6210\u529f"
       : "\u5f00\u59cb\u5b75\u5316";
   drawWrappedText(hatchButtonLabel, 195, 629, 132, 26, 1, { className: "hatch-primary-label", font: "900 19px Arial, Microsoft YaHei, sans-serif", color: "#fff7df", textShadow: "0 2px 0 rgba(74, 119, 20, 0.55)" });
-  img("hatchButtonImage", { x: 282, y: 591, w: 64, h: 54 });
+  img("hatchButtonImage", { x: 285, y: 588, w: 58, h: 60 }, { className: "hatch-side-action" });
 }
 
 function drawHatchStatusText() {
@@ -442,7 +442,7 @@ function drawWorksScene() {
   }
 
   img("hatchButtonStart", { x: 116, y: 615, w: 158, h: 54 });
-  drawWrappedText("\u5237\u65b0\u4f5c\u54c1", 195, 654, 132, 24, 1, {
+  drawWrappedText("\u5237\u65b0\u4f5c\u54c1", 195, 651, 132, 24, 1, {
     className: "works-refresh-text",
     font: "900 18px Arial, Microsoft YaHei, sans-serif",
     color: "#fff9e8",

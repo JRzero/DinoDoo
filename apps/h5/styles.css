@@ -868,3 +868,23 @@ body.asset-mode .component-page {
   box-sizing: border-box;
   overflow-wrap: anywhere;
 }
+
+.scene-art.hatch-side-action {
+  object-fit: fill;
+}
+
+.hatch-mic {
+  left: 47px;
+  top: 588px;
+  width: 58px;
+  height: 60px;
+  border-radius: 30px;
+}
+
+.hatch-image {
+  left: 285px;
+  top: 588px;
+  width: 58px;
+  height: 60px;
+  border-radius: 30px;
+}
