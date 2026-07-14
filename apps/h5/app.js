@@ -246,6 +246,27 @@ function img(key, rect, options = {}) {
   return el;
 }
 
+function imgSource(source, fallbackKey, rect, options = {}) {
+  if (!source || !stage.scene) return img(fallbackKey, rect, options);
+  const el = document.createElement("img");
+  el.className = ["scene-art", options.className].filter(Boolean).join(" ");
+  el.dataset.asset = "generated-work";
+  el.src = source;
+  el.alt = "";
+  el.draggable = false;
+  el.addEventListener("error", () => {
+    const fallback = assetSources[fallbackKey];
+    if (!fallback || el.dataset.fallbackApplied === "true") return;
+    el.dataset.fallbackApplied = "true";
+    el.dataset.asset = fallbackKey;
+    el.src = fallback;
+  }, { once: true });
+  applySlot(el, rect);
+  if (options.zIndex) el.style.zIndex = String(options.zIndex);
+  stage.scene.appendChild(el);
+  return el;
+}
+
 function navImg(key, rect) {
   const source = assetSources[key];
   if (!source || !stage.nav) return null;
@@ -342,7 +363,7 @@ function drawHatchScene() {
   img(eggKey(), eggRect(), { className: hatchEggClass() });
   drawHatchStatusText();
   img("hatchControlPanel", { x: 25, y: 506, w: 340, h: 160 });
-  img("hatchButtonVoice", { x: 44, y: 593, w: 64, h: 50 });
+  img("hatchButtonVoice", { x: 44, y: 591, w: 64, h: 54 });
   img("hatchButtonStart", { x: 116, y: 591, w: 158, h: 54 });
   const hatchButtonLabel = state.hatchStatus === "warming" || state.hatchStatus === "loading"
     ? "\u5b75\u5316\u4e2d..."
@@ -350,7 +371,7 @@ function drawHatchScene() {
       ? "\u5b75\u5316\u6210\u529f"
       : "\u5f00\u59cb\u5b75\u5316";
   drawWrappedText(hatchButtonLabel, 195, 629, 132, 26, 1, { className: "hatch-primary-label", font: "900 19px Arial, Microsoft YaHei, sans-serif", color: "#fff7df", textShadow: "0 2px 0 rgba(74, 119, 20, 0.55)" });
-  img("hatchButtonImage", { x: 282, y: 593, w: 64, h: 50 });
+  img("hatchButtonImage", { x: 282, y: 591, w: 64, h: 54 });
 }
 
 function drawHatchStatusText() {
@@ -426,13 +447,14 @@ function drawWorksCarousel(works) {
     color: "#fff8df",
     textShadow: "0 2px 0 rgba(139, 77, 24, 0.52)"
   });
-  img(workDinoKey(item, page), { x: 137, y: 238, w: 116, h: 132 }, { className: "works-carousel-dino" });
-  drawWrappedText(worksDisplayTitle(item), 195, 440, 200, 22, 1, {
+  const fallbackKey = workDinoKey(item, page);
+  imgSource(workImageSource(item), fallbackKey, { x: 137, y: 269, w: 116, h: 132 }, { className: "works-carousel-dino" });
+  drawWrappedText(worksDisplayTitle(item), 195, 416, 200, 22, 1, {
     className: "works-card-name",
     font: "900 18px Arial, Microsoft YaHei, sans-serif",
     color: "#6f421f"
   });
-  drawWrappedText(worksDisplayDescription(item), 195, 477, 190, 16, 2, {
+  drawWrappedText(worksDisplayDescription(item), 195, 456, 190, 16, 2, {
     className: "works-card-description",
     font: "800 11px Arial, Microsoft YaHei, sans-serif",
     color: "#8a673c"
@@ -493,6 +515,11 @@ function worksChinesePrompt(item) {
     .replace(/[A-Za-z][A-Za-z\s,-]*$/, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function workImageSource(item) {
+  const source = String(item?.image || "").trim();
+  return /^\/media\/[A-Za-z0-9._-]+$/.test(source) ? source : "";
 }
 
 function workDinoKey(item, index) {
@@ -903,7 +930,7 @@ function hatchRequestId() {
   return `hatch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-async function requestHatchArtifact(prompt, imageFile, idempotencyKey) {
+async function submitHatchJob(prompt, imageFile, idempotencyKey) {
   let data;
   if (imageFile) {
     const form = new FormData();
@@ -912,87 +939,84 @@ async function requestHatchArtifact(prompt, imageFile, idempotencyKey) {
     form.append("image", imageFile, imageFile.name);
     data = await api.postForm("/api/v1/hatches", form);
   } else {
-    data = await api.post("/api/v1/hatches", {
-      prompt,
-      idempotency_key: idempotencyKey,
-    });
+    data = await api.post("/api/v1/hatches", { prompt, idempotency_key: idempotencyKey });
   }
-  if (!data?.artifact) throw new Error("孵化服务没有返回作品");
-  return normalizeArtifact(data.artifact);
+  if (!data?.job?.job_id || !data.job.status_url) throw new Error("Hatch service did not return a job");
+  return data.job;
 }
 
 function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function backendUnavailable(error) {
-  return !error?.status || [404, 502, 503, 504].includes(error.status);
+function applyHatchJobProgress(job) {
+  if (["queued", "profile"].includes(job.current_step)) {
+    state.eggState = "idle";
+    if (state.hatchStatus !== "warming") setHatchStatus("warming", "\u6b63\u5728\u8ba4\u8bc6\u4f60\u7684\u5c0f\u6050\u9f99...");
+    return;
+  }
+  if (["image", "persist"].includes(job.current_step)) {
+    state.eggState = "cracking";
+    if (state.hatchStatus !== "loading") setHatchStatus("loading", "\u5c0f\u6050\u9f99\u6b63\u5728\u7834\u58f3...");
+  }
+}
+
+async function pollHatchJob(initialJob) {
+  let job = initialJob;
+  const deadline = Date.now() + 4 * 60 * 1000;
+  while (Date.now() < deadline) {
+    applyHatchJobProgress(job);
+    if (job.status === "succeeded") {
+      if (!job.artifact) throw new Error("Completed hatch job has no dinosaur image");
+      return normalizeArtifact(job.artifact);
+    }
+    if (job.status === "failed") {
+      const error = new Error(job.error?.message || "Dinosaur image generation failed");
+      error.code = job.error?.code || "HATCH_FAILED";
+      throw error;
+    }
+    await wait(500);
+    const data = await api.get(job.status_url);
+    if (!data?.job) throw new Error("Hatch status response is invalid");
+    job = data.job;
+  }
+  throw new Error("Hatch job timed out");
 }
 
 async function hatchDino() {
-  if (state.hatchStatus === "warming" || state.hatchStatus === "loading" || state.hatchStatus === "success") return;
+  if (["warming", "loading", "success"].includes(state.hatchStatus)) return;
   const input = $("hatchPrompt");
   const prompt = input.value.trim() || copy.hatchDefault;
   const imageFile = state.hatchImageFile;
-  const imageName = state.hatchImageName;
-  const idempotencyKey = hatchRequestId();
-  const requestOutcome = requestHatchArtifact(prompt, imageFile, idempotencyKey)
-    .then((item) => ({ item, error: null }))
-    .catch((error) => ({ item: null, error }));
-
   state.eggState = "idle";
   setHatchControlsDisabled(true);
-  setHatchStatus("warming", "\u6050\u9f99\u86cb\u6b63\u5728\u53d1\u5149...");
+  setHatchStatus("warming", "\u6b63\u5728\u8ba4\u8bc6\u4f60\u7684\u5c0f\u6050\u9f99...");
   setAction("hatch:submit");
-
-  await wait(800);
-  state.eggState = "cracking";
-  setHatchStatus("loading", "\u5494\u5693\uff01\u86cb\u58f3\u88c2\u5f00\u5566\uff01");
-  await wait(1500);
-
-  const outcome = await requestOutcome;
-  let item = outcome.item;
-  if (outcome.error && !backendUnavailable(outcome.error)) {
+  try {
+    const job = await submitHatchJob(prompt, imageFile, hatchRequestId());
+    const item = await pollHatchJob(job);
+    state.eggState = "success";
+    input.value = "";
+    state.hatchImageName = "";
+    state.hatchImageFile = null;
+    updateHatchInputState();
+    await loadArtifacts({ showBackend: true });
+    setAction(`hatch:backend-success:${item.id}`);
+    setHatchStatus("success", "\u5c0f\u6050\u9f99\u51fa\u751f\u5566\uff01");
+    await wait(1800);
+    routeTo("works");
     state.eggState = "idle";
+    state.hatchStatus = "idle";
+    document.body.dataset.hatchPhase = "idle";
+  } catch (error) {
+    state.eggState = "idle";
+    setAction(`hatch:error:${error.code || error.status || "unknown"}`);
+    $("hatchStatus").title = error.message || "";
+    setTransientHatchStatus("error", "\u5b75\u5316\u6ca1\u6709\u6210\u529f\uff0c\u8bf7\u518d\u8bd5\u4e00\u6b21", 2800);
+  } finally {
     setHatchControlsDisabled(false);
-    setAction(`hatch:error:${outcome.error.status || "unknown"}`);
-    $("hatchStatus").title = outcome.error.message || "";
-    setTransientHatchStatus("error", "\u8bf7\u8c03\u6574\u4e00\u4e0b\u63cf\u8ff0", 2400);
-    return;
+    state.hatchStatusTimer = null;
   }
-
-  if (!item) {
-    item = {
-      id: `local-${Date.now()}`,
-      name: copy.newDino,
-      prompt,
-      image: imageName,
-      provider: "offline",
-      offline: true,
-      createdAt: new Date().toISOString(),
-    };
-    state.hatchedDinos.unshift(item);
-    saveLocalHatched();
-    setAction("hatch:offline-fallback");
-  } else {
-    setAction("hatch:backend-success");
-  }
-
-  state.eggState = "success";
-  input.value = "";
-  state.hatchImageName = "";
-  state.hatchImageFile = null;
-  updateHatchInputState();
-  await loadArtifacts({ showBackend: true });
-  setHatchStatus("success", "\u5c0f\u6050\u9f99\u51fa\u751f\u5566\uff01");
-
-  await wait(1800);
-  routeTo("works");
-  state.eggState = "idle";
-  state.hatchStatus = "idle";
-  document.body.dataset.hatchPhase = "idle";
-  setHatchControlsDisabled(false);
-  state.hatchStatusTimer = null;
 }
 
 function saveSettings() {

@@ -376,17 +376,17 @@ body.asset-mode .component-page {
 }
 .hatch-mic {
   left: 44px;
-  top: 593px;
+  top: 591px;
   width: 64px;
-  height: 50px;
+  height: 54px;
   border-radius: 27px;
 }
 
 .hatch-image {
   left: 282px;
-  top: 593px;
+  top: 591px;
   width: 64px;
-  height: 50px;
+  height: 54px;
   border-radius: 27px;
 }
 
@@ -593,9 +593,9 @@ body.asset-mode .component-page {
 
 .hatch-image {
   left: 282px;
-  top: 593px;
+  top: 591px;
   width: 64px;
-  height: 50px;
+  height: 54px;
   border-radius: 27px;
 }
 .hatch-chip { display: none; pointer-events: none; }
@@ -731,7 +731,7 @@ body.asset-mode .component-page {
 }
 
 .scene-art.story-dino-loading {
-  animation: story-dino-thinking-walk 1.45s ease-in-out infinite;
+  animation: story-dino-thinking-walk 2.6s ease-in-out infinite;
 }
 
 
@@ -743,15 +743,17 @@ body.asset-mode .component-page {
 
 @keyframes story-dino-thinking-walk {
   0% { transform: translate(0, 0) scaleX(1) rotate(0); }
-  12% { transform: translate(-6px, -2px) scaleX(1) rotate(-1deg); }
-  24% { transform: translate(-12px, 0) scaleX(1) rotate(0); }
-  36% { transform: translate(-19px, -2px) scaleX(1) rotate(-1deg); }
-  48% { transform: translate(-26px, 0) scaleX(1) rotate(0); }
-  52% { transform: translate(-26px, 0) scaleX(-1) rotate(0); }
-  64% { transform: translate(-19px, -2px) scaleX(-1) rotate(-1deg); }
-  76% { transform: translate(-12px, 0) scaleX(-1) rotate(0); }
-  88% { transform: translate(-6px, -2px) scaleX(-1) rotate(-1deg); }
-  96% { transform: translate(0, 0) scaleX(-1) rotate(0); }
+  10% { transform: translate(-22px, -2px) scaleX(1) rotate(-1deg); }
+  20% { transform: translate(-45px, 0) scaleX(1) rotate(0); }
+  30% { transform: translate(-68px, -2px) scaleX(1) rotate(-1deg); }
+  40% { transform: translate(-90px, 0) scaleX(1) rotate(0); }
+  48% { transform: translate(-112px, -2px) scaleX(1) rotate(-1deg); }
+  52% { transform: translate(-112px, 0) scaleX(-1) rotate(0); }
+  60% { transform: translate(-90px, -2px) scaleX(-1) rotate(-1deg); }
+  70% { transform: translate(-68px, 0) scaleX(-1) rotate(0); }
+  80% { transform: translate(-45px, -2px) scaleX(-1) rotate(-1deg); }
+  90% { transform: translate(-22px, 0) scaleX(-1) rotate(0); }
+  96% { transform: translate(0, -2px) scaleX(-1) rotate(-1deg); }
   100% { transform: translate(0, 0) scaleX(1) rotate(0); }
 }
 

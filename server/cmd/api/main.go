@@ -21,6 +21,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -113,12 +114,14 @@ type HatchRequest struct {
 	ImageName      string
 	ImagePath      string
 	ImageData      []byte
+	Profile        *HatchProfile
 }
 
 type StoreData struct {
 	Settings  Settings                `json:"settings"`
 	Sessions  map[string]*PlaySession `json:"sessions"`
 	Artifacts map[string]*Artifact    `json:"artifacts"`
+	Hatches   map[string]*HatchJob    `json:"hatches"`
 }
 
 type Repository struct {
@@ -143,6 +146,7 @@ func NewRepository(dataDir string) (*Repository, error) {
 			Settings:  defaultSettings(),
 			Sessions:  map[string]*PlaySession{},
 			Artifacts: map[string]*Artifact{},
+			Hatches:   map[string]*HatchJob{},
 		},
 	}
 	_ = repo.load()
@@ -183,6 +187,9 @@ func (r *Repository) load() error {
 	}
 	if data.Artifacts == nil {
 		data.Artifacts = map[string]*Artifact{}
+	}
+	if data.Hatches == nil {
+		data.Hatches = map[string]*HatchJob{}
 	}
 	if data.Settings.EnabledThemes == nil {
 		data.Settings = defaultSettings()
@@ -350,17 +357,41 @@ func (g SafetyGuard) SafePrompt(prompt string) (string, []string) {
 	return safe, flags
 }
 
+func guardContains(text, word string) bool {
+	if word == "" {
+		return false
+	}
+	asciiWord := true
+	for _, r := range word {
+		if r > unicode.MaxASCII || !unicode.IsLetter(r) {
+			asciiWord = false
+			break
+		}
+	}
+	if !asciiWord {
+		return strings.Contains(text, word)
+	}
+	for _, token := range strings.FieldsFunc(text, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
+	}) {
+		if token == word {
+			return true
+		}
+	}
+	return false
+}
+
 func (g SafetyGuard) check(text string) []string {
 	lower := strings.ToLower(text)
 	flags := []string{}
 	for _, word := range g.unsafeKeywords {
-		if strings.Contains(lower, strings.ToLower(word)) {
+		if guardContains(lower, strings.ToLower(word)) {
 			flags = append(flags, "safety")
 			break
 		}
 	}
 	for _, word := range g.privateWords {
-		if strings.Contains(lower, strings.ToLower(word)) {
+		if guardContains(lower, strings.ToLower(word)) {
 			flags = append(flags, "privacy")
 			break
 		}
@@ -654,43 +685,50 @@ func (m MediaService) Transcribe(ctx context.Context, header *multipart.FileHead
 }
 
 func (m MediaService) GenerateHatch(ctx context.Context, req HatchRequest) (*Artifact, error) {
-	prompt := strings.TrimSpace(req.Prompt)
-	if prompt == "" {
-		prompt = "蓝色 会唱歌"
+	if req.Profile == nil {
+		return nil, errors.New("hatch profile is required")
 	}
-	safePrompt, flags := m.guard.SafePrompt(prompt)
-	seed := hatchSeed(prompt, req.ImageName != "")
+	if imageAPIKey() == "" {
+		return nil, errors.New("image provider is not configured")
+	}
+	provider := strings.TrimSpace(os.Getenv("DINODOO_IMAGE_PROVIDER"))
+	if provider != "" && provider != "openai" {
+		return nil, fmt.Errorf("unsupported image provider %q", provider)
+	}
+	imageSkill, err := configuredHatchImageSkill()
+	if err != nil {
+		return nil, err
+	}
+	safePrompt, flags := m.guard.SafePrompt(req.Profile.ImagePrompt)
+	styledPrompt := buildHatchImagePrompt(safePrompt)
+	referencePaths := resolveHatchImageReferencePaths(m.mediaDir, req.ImagePath)
+	imageModel := env("OPENAI_IMAGE_MODEL", "gpt-image-2")
 	promptJSON, _ := json.Marshal(map[string]interface{}{
-		"text":            prompt,
-		"safe_prompt":     safePrompt,
-		"image_name":      req.ImageName,
-		"safety_flags":    flags,
-		"idempotency_key": req.IdempotencyKey,
+		"text":                   req.Prompt,
+		"name":                   req.Profile.Name,
+		"description":            req.Profile.Description,
+		"image_prompt":           safePrompt,
+		"generated_image_prompt": styledPrompt,
+		"image_skill":            imageSkill,
+		"image_style_version":    hatchImageStyleVersion,
+		"image_model":            imageModel,
+		"style_reference_count":  len(referencePaths),
+		"image_name":             req.ImageName,
+		"safety_flags":           flags,
+		"idempotency_key":        req.IdempotencyKey,
 	})
 	artifact := &Artifact{
 		ID:             newID("art"),
 		IdempotencyKey: req.IdempotencyKey,
 		Type:           "hatched_dino",
-		Title:          "新小恐龙",
+		Title:          req.Profile.Name,
 		Prompt:         promptJSON,
 		SourceFilePath: req.ImagePath,
 		Status:         "ready",
-		Provider:       "local-svg",
+		Provider:       imageSkill,
 		CreatedAt:      time.Now().Format(time.RFC3339),
 	}
-
-	if os.Getenv("OPENAI_API_KEY") != "" && os.Getenv("DINODOO_IMAGE_PROVIDER") == "openai" {
-		filename, err := m.generateOpenAIHatchImage(ctx, safePrompt, req.ImagePath, artifact.ID)
-		if err == nil {
-			artifact.FilePath = filename
-			artifact.URL = "/media/" + filename
-			artifact.Provider = "openai"
-			return artifact, nil
-		}
-		log.Printf("hatch image provider fallback: %v", err)
-	}
-
-	filename, err := m.generateSVGCard(seed, artifact.ID)
+	filename, err := m.generateOpenAIHatchImage(ctx, styledPrompt, referencePaths, artifact.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -736,39 +774,108 @@ func hatchSeed(prompt string, hasImage bool) CardSeed {
 	return seed
 }
 
-func (m MediaService) generateOpenAIHatchImage(ctx context.Context, prompt, sourcePath, id string) (string, error) {
-	if sourcePath == "" {
+func hatchStyleReferencePaths() []string {
+	raw := strings.TrimSpace(os.Getenv("DINODOO_HATCH_STYLE_REFERENCES"))
+	if strings.EqualFold(raw, "none") || raw == "-" {
+		return nil
+	}
+	if raw != "" {
+		return existingImagePaths(filepath.SplitList(raw))
+	}
+
+	assetNames := []string{"homeV2DinoXiaobao.png", "homeV2DinoAdai.png", "homeV2DinoGulu.png"}
+	assetRoots := []string{
+		filepath.Join("apps", "h5", "assets", "game-elements", "runtime-current"),
+		filepath.Join("..", "apps", "h5", "assets", "game-elements", "runtime-current"),
+	}
+	if executable, err := os.Executable(); err == nil {
+		assetRoots = append(assetRoots, filepath.Join(filepath.Dir(executable), "..", "apps", "h5", "assets", "game-elements", "runtime-current"))
+	}
+	for _, root := range assetRoots {
+		paths := make([]string, 0, len(assetNames))
+		for _, name := range assetNames {
+			paths = append(paths, filepath.Join(root, name))
+		}
+		if existing := existingImagePaths(paths); len(existing) == len(assetNames) {
+			return existing
+		}
+	}
+	return nil
+}
+
+func existingImagePaths(paths []string) []string {
+	existing := make([]string, 0, len(paths))
+	seen := map[string]bool{}
+	for _, path := range paths {
+		path = strings.TrimSpace(path)
+		if path == "" {
+			continue
+		}
+		abs, err := filepath.Abs(path)
+		if err != nil || seen[abs] {
+			continue
+		}
+		info, err := os.Stat(abs)
+		if err != nil || info.IsDir() {
+			continue
+		}
+		ext := strings.ToLower(filepath.Ext(abs))
+		if ext != ".png" && ext != ".jpg" && ext != ".jpeg" && ext != ".webp" {
+			continue
+		}
+		seen[abs] = true
+		existing = append(existing, abs)
+	}
+	return existing
+}
+
+func resolveHatchImageReferencePaths(mediaDir, sourcePath string) []string {
+	paths := hatchStyleReferencePaths()
+	if strings.TrimSpace(sourcePath) != "" {
+		paths = append(paths, filepath.Join(mediaDir, filepath.Base(sourcePath)))
+	}
+	return existingImagePaths(paths)
+}
+
+func (m MediaService) generateOpenAIHatchImage(ctx context.Context, prompt string, referencePaths []string, id string) (string, error) {
+	if len(referencePaths) == 0 {
 		return m.generateOpenAIImage(ctx, prompt, id)
 	}
 
-	source, err := os.Open(filepath.Join(m.mediaDir, filepath.Base(sourcePath)))
-	if err != nil {
-		return "", err
-	}
-	defer source.Close()
-
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
-	part, err := writer.CreateFormFile("image", filepath.Base(sourcePath))
-	if err != nil {
-		return "", err
+	for _, referencePath := range referencePaths {
+		source, err := os.Open(referencePath)
+		if err != nil {
+			return "", err
+		}
+		part, err := writer.CreateFormFile("image", filepath.Base(referencePath))
+		if err == nil {
+			_, err = io.Copy(part, source)
+		}
+		closeErr := source.Close()
+		if err != nil {
+			return "", err
+		}
+		if closeErr != nil {
+			return "", closeErr
+		}
 	}
-	if _, err := io.Copy(part, source); err != nil {
-		return "", err
-	}
-	_ = writer.WriteField("model", env("OPENAI_IMAGE_MODEL", "gpt-image-1"))
+	_ = writer.WriteField("model", env("OPENAI_IMAGE_MODEL", "gpt-image-2"))
 	_ = writer.WriteField("prompt", prompt)
 	_ = writer.WriteField("size", env("OPENAI_IMAGE_SIZE", "1024x1024"))
-	_ = writer.WriteField("response_format", "b64_json")
+	_ = writer.WriteField("quality", env("OPENAI_IMAGE_QUALITY", "high"))
+	_ = writer.WriteField("background", env("OPENAI_IMAGE_BACKGROUND", "transparent"))
+	_ = writer.WriteField("output_format", "png")
 	if err := writer.Close(); err != nil {
 		return "", err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, env("OPENAI_BASE_URL", "https://api.openai.com/v1")+"/images/edits", &buf)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, imageBaseURL()+"/images/edits", &buf)
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("OPENAI_API_KEY"))
+	req.Header.Set("Authorization", "Bearer "+imageAPIKey())
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	res, err := m.httpClient.Do(req)
 	if err != nil {
@@ -798,7 +905,7 @@ func (m MediaService) generateOpenAIHatchImage(ctx context.Context, prompt, sour
 		if err != nil {
 			return "", err
 		}
-		return filename, os.WriteFile(full, imageBytes, 0o644)
+		return filename, writeRasterImage(full, imageBytes)
 	}
 	if out.Data[0].URL == "" {
 		return "", errors.New("image edit provider returned no image payload")
@@ -815,13 +922,7 @@ func (m MediaService) generateOpenAIHatchImage(ctx context.Context, prompt, sour
 	if imgRes.StatusCode >= 300 {
 		return "", fmt.Errorf("image download status %d", imgRes.StatusCode)
 	}
-	target, err := os.Create(full)
-	if err != nil {
-		return "", err
-	}
-	defer target.Close()
-	_, err = io.Copy(target, imgRes.Body)
-	return filename, err
+	return filename, writeRasterImageFromReader(full, imgRes.Body)
 }
 func (m MediaService) GenerateCard(ctx context.Context, session *PlaySession) (*Artifact, error) {
 	seed := session.State.CardSeed
@@ -863,16 +964,19 @@ func (m MediaService) GenerateCard(ctx context.Context, session *PlaySession) (*
 
 func (m MediaService) generateOpenAIImage(ctx context.Context, prompt, id string) (string, error) {
 	body := map[string]interface{}{
-		"model":  env("OPENAI_IMAGE_MODEL", "gpt-image-1"),
-		"prompt": prompt,
-		"size":   env("OPENAI_IMAGE_SIZE", "1024x1024"),
+		"model":         env("OPENAI_IMAGE_MODEL", "gpt-image-2"),
+		"prompt":        prompt,
+		"size":          env("OPENAI_IMAGE_SIZE", "1024x1024"),
+		"quality":       env("OPENAI_IMAGE_QUALITY", "high"),
+		"background":    env("OPENAI_IMAGE_BACKGROUND", "transparent"),
+		"output_format": "png",
 	}
 	payload, _ := json.Marshal(body)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, env("OPENAI_BASE_URL", "https://api.openai.com/v1")+"/images/generations", bytes.NewReader(payload))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, imageBaseURL()+"/images/generations", bytes.NewReader(payload))
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("OPENAI_API_KEY"))
+	req.Header.Set("Authorization", "Bearer "+imageAPIKey())
 	req.Header.Set("Content-Type", "application/json")
 	res, err := m.httpClient.Do(req)
 	if err != nil {
@@ -902,7 +1006,7 @@ func (m MediaService) generateOpenAIImage(ctx context.Context, prompt, id string
 		if err != nil {
 			return "", err
 		}
-		return filename, os.WriteFile(full, bytes, 0o644)
+		return filename, writeRasterImage(full, bytes)
 	}
 	if out.Data[0].URL != "" {
 		imgReq, _ := http.NewRequestWithContext(ctx, http.MethodGet, out.Data[0].URL, nil)
@@ -911,13 +1015,10 @@ func (m MediaService) generateOpenAIImage(ctx context.Context, prompt, id string
 			return "", err
 		}
 		defer imgRes.Body.Close()
-		f, err := os.Create(full)
-		if err != nil {
-			return "", err
+		if imgRes.StatusCode >= 300 {
+			return "", fmt.Errorf("image download status %d", imgRes.StatusCode)
 		}
-		defer f.Close()
-		_, err = io.Copy(f, imgRes.Body)
-		return filename, err
+		return filename, writeRasterImageFromReader(full, imgRes.Body)
 	}
 	return "", errors.New("image provider returned no image payload")
 }
@@ -951,11 +1052,14 @@ func (m MediaService) generateSVGCard(seed CardSeed, id string) (string, error) 
 }
 
 type App struct {
-	repo    *Repository
-	story   StoryEngine
-	media   MediaService
-	static  string
-	hatchMu sync.Mutex
+	repo          *Repository
+	story         StoryEngine
+	media         MediaService
+	static        string
+	hatchMu       sync.Mutex
+	hatchClaims   map[string]bool
+	hatchProfile  HatchProfileGenerator
+	hatchGenerate func(context.Context, HatchRequest) (*Artifact, error)
 }
 
 func main() {
@@ -971,13 +1075,17 @@ func main() {
 	}
 	guard := NewSafetyGuard()
 	app := &App{
-		repo:   repo,
-		story:  NewStoryEngine(guard, NewOpenAIStoryGeneratorFromEnv()),
-		media:  NewMediaService(repo.mediaDir, guard),
-		static: staticDir,
+		repo:         repo,
+		story:        NewStoryEngine(guard, NewOpenAIStoryGeneratorFromEnv()),
+		media:        NewMediaService(repo.mediaDir, guard),
+		static:       staticDir,
+		hatchClaims:  map[string]bool{},
+		hatchProfile: NewOpenAIHatchProfileGeneratorFromEnv(guard),
 	}
+	app.hatchGenerate = app.media.GenerateHatch
 	mux := http.NewServeMux()
 	app.routes(mux)
+	app.resumeHatchJobs()
 	addr := ":" + env("PORT", "8080")
 	log.Printf("DinoDoo API listening on http://localhost%s", addr)
 	log.Fatal(http.ListenAndServe(addr, logRequest(mux)))
@@ -1002,6 +1110,7 @@ func (a *App) routes(mux *http.ServeMux) {
 	})
 	mux.HandleFunc("PUT /api/v1/parent/settings", a.updateSettings)
 	mux.HandleFunc("POST /api/v1/hatches", a.createHatch)
+	mux.HandleFunc("GET /api/v1/hatches/{id}", a.getHatchJob)
 	mux.HandleFunc("POST /api/v1/play-sessions", a.createSession)
 	mux.HandleFunc("GET /api/v1/play-sessions/{id}", a.getSession)
 	mux.HandleFunc("POST /api/v1/play-sessions/{id}/turns", a.createTurn)
@@ -1042,11 +1151,8 @@ func (a *App) createHatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.hatchMu.Lock()
-	defer a.hatchMu.Unlock()
-
-	if existing, ok := a.repo.ArtifactByIdempotencyKey(hatchReq.IdempotencyKey); ok {
-		writeJSON(w, http.StatusOK, map[string]interface{}{"artifact": existing, "replayed": true})
+	if existing, ok := a.repo.HatchJobByIdempotencyKey(hatchReq.IdempotencyKey); ok {
+		writeJSON(w, http.StatusAccepted, map[string]interface{}{"job": a.hatchJobResponse(existing), "replayed": true})
 		return
 	}
 
@@ -1059,19 +1165,14 @@ func (a *App) createHatch(w http.ResponseWriter, r *http.Request) {
 		hatchReq.ImagePath = filename
 	}
 
-	artifact, err := a.media.GenerateHatch(r.Context(), hatchReq)
-	if err != nil {
+	job := newHatchJob(hatchReq)
+	if err := a.repo.SaveHatchJob(job); err != nil {
 		removeMediaFile(a.repo.mediaDir, hatchReq.ImagePath)
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	if err := a.repo.SaveArtifact(artifact); err != nil {
-		removeMediaFile(a.repo.mediaDir, artifact.FilePath)
-		removeMediaFile(a.repo.mediaDir, artifact.SourceFilePath)
-		writeError(w, http.StatusInternalServerError, err)
-		return
-	}
-	writeJSON(w, http.StatusCreated, map[string]interface{}{"artifact": artifact, "replayed": false})
+	a.enqueueHatchJob(job.JobID)
+	writeJSON(w, http.StatusAccepted, map[string]interface{}{"job": a.hatchJobResponse(job), "replayed": false})
 }
 
 func parseHatchRequest(r *http.Request) (HatchRequest, error) {

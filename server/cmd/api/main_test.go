@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"mime/multipart"
 	"net/http"
@@ -10,11 +11,32 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 type hatchResponse struct {
 	Artifact *Artifact `json:"artifact"`
 	Replayed bool      `json:"replayed"`
+}
+
+type hatchSubmitResponse struct {
+	Job      HatchJobResponse `json:"job"`
+	Replayed bool             `json:"replayed"`
+}
+
+type fakeHatchProfileGenerator struct {
+	err error
+}
+
+func (g fakeHatchProfileGenerator) Generate(context.Context, string) (HatchProfile, error) {
+	if g.err != nil {
+		return HatchProfile{}, g.err
+	}
+	return HatchProfile{
+		Name:        "Little Star",
+		Description: "A friendly singing baby dinosaur.",
+		ImagePrompt: "One friendly full-body blue baby dinosaur singing in a clean preschool game scene.",
+	}, nil
 }
 
 func newTestHandler(t *testing.T) (*App, http.Handler) {
@@ -28,10 +50,32 @@ func newTestHandler(t *testing.T) (*App, http.Handler) {
 	}
 	guard := NewSafetyGuard()
 	app := &App{
-		repo:   repo,
-		story:  NewStoryEngine(guard),
-		media:  NewMediaService(repo.mediaDir, guard),
-		static: t.TempDir(),
+		repo:         repo,
+		story:        NewStoryEngine(guard),
+		media:        NewMediaService(repo.mediaDir, guard),
+		static:       t.TempDir(),
+		hatchClaims:  map[string]bool{},
+		hatchProfile: fakeHatchProfileGenerator{},
+	}
+	app.hatchGenerate = func(_ context.Context, req HatchRequest) (*Artifact, error) {
+		filename := newID("generated") + ".png"
+		if err := os.WriteFile(filepath.Join(repo.mediaDir, filename), []byte{0x89, 0x50, 0x4e, 0x47}, 0o644); err != nil {
+			return nil, err
+		}
+		promptJSON, _ := json.Marshal(map[string]interface{}{"text": req.Prompt, "profile": req.Profile})
+		return &Artifact{
+			ID:             newID("art"),
+			IdempotencyKey: req.IdempotencyKey,
+			Type:           "hatched_dino",
+			Title:          req.Profile.Name,
+			Prompt:         promptJSON,
+			FilePath:       filename,
+			SourceFilePath: req.ImagePath,
+			URL:            "/media/" + filename,
+			Status:         "ready",
+			Provider:       "fake-image",
+			CreatedAt:      time.Now().Format(time.RFC3339),
+		}, nil
 	}
 	mux := http.NewServeMux()
 	app.routes(mux)
@@ -59,102 +103,111 @@ func decodeHatchResponse(t *testing.T, rec *httptest.ResponseRecorder) hatchResp
 	}
 	return response
 }
+func decodeHatchSubmitResponse(t *testing.T, rec *httptest.ResponseRecorder) hatchSubmitResponse {
+	t.Helper()
+	var response hatchSubmitResponse
+	if err := json.NewDecoder(rec.Body).Decode(&response); err != nil {
+		t.Fatalf("decode hatch submit response: %v; body=%s", err, rec.Body.String())
+	}
+	return response
+}
 
-func TestCreateHatchJSONUsesFallbackAndPersists(t *testing.T) {
+func waitForHatchJob(t *testing.T, handler http.Handler, statusURL, wantStatus string) HatchJobResponse {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		req := httptest.NewRequest(http.MethodGet, statusURL, nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("job status=%d body=%s", rec.Code, rec.Body.String())
+		}
+		var response struct {
+			Job HatchJobResponse `json:"job"`
+		}
+		if err := json.NewDecoder(rec.Body).Decode(&response); err != nil {
+			t.Fatal(err)
+		}
+		if response.Job.Status == wantStatus {
+			return response.Job
+		}
+		if response.Job.Status == hatchJobFailed && wantStatus != hatchJobFailed {
+			t.Fatalf("job failed: %#v", response.Job.Error)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("timed out waiting for hatch status %s", wantStatus)
+	return HatchJobResponse{}
+}
+
+func TestCreateHatchSubmitsJobAndPersistsGeneratedImage(t *testing.T) {
 	app, handler := newTestHandler(t)
 	rec := requestJSON(t, handler, http.MethodPost, "/api/v1/hatches", map[string]string{
-		"prompt":          "蓝色 会唱歌的三角龙",
+		"prompt":          "blue singing triceratops",
 		"idempotency_key": "json-hatch-1",
 	})
-	if rec.Code != http.StatusCreated {
+	if rec.Code != http.StatusAccepted {
 		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
 	}
-	response := decodeHatchResponse(t, rec)
-	if response.Replayed {
-		t.Fatal("new hatch unexpectedly replayed")
+	submit := decodeHatchSubmitResponse(t, rec)
+	if submit.Replayed || submit.Job.JobID == "" || submit.Job.StatusURL == "" {
+		t.Fatalf("unexpected submit response: %#v", submit)
 	}
-	if response.Artifact == nil || response.Artifact.Type != "hatched_dino" {
-		t.Fatalf("unexpected artifact: %#v", response.Artifact)
+	job := waitForHatchJob(t, handler, submit.Job.StatusURL, hatchJobSucceeded)
+	if job.Progress != 100 || job.Artifact == nil || job.Artifact.Provider != "fake-image" {
+		t.Fatalf("unexpected completed job: %#v", job)
 	}
-	if response.Artifact.Provider != "local-svg" || response.Artifact.Status != "ready" {
-		t.Fatalf("unexpected fallback artifact: %#v", response.Artifact)
-	}
-	if response.Artifact.URL == "" {
-		t.Fatal("artifact URL is empty")
-	}
-	if _, err := os.Stat(filepath.Join(app.repo.mediaDir, response.Artifact.FilePath)); err != nil {
-		t.Fatalf("generated media missing: %v", err)
+	if _, err := os.Stat(filepath.Join(app.repo.mediaDir, job.Artifact.FilePath)); err != nil {
+		t.Fatalf("generated image missing: %v", err)
 	}
 	if got := len(app.repo.Artifacts()); got != 1 {
 		t.Fatalf("artifact count=%d, want 1", got)
 	}
-	var promptData map[string]interface{}
-	if err := json.Unmarshal(response.Artifact.Prompt, &promptData); err != nil {
-		t.Fatalf("prompt metadata: %v", err)
-	}
-	if promptData["text"] != "蓝色 会唱歌的三角龙" {
-		t.Fatalf("prompt text=%v", promptData["text"])
-	}
 }
 
-func TestCreateHatchIsIdempotent(t *testing.T) {
+func TestCreateHatchIsIdempotentByJob(t *testing.T) {
 	app, handler := newTestHandler(t)
-	body := map[string]string{"prompt": "粉色小腕龙", "idempotency_key": "same-hatch"}
+	body := map[string]string{"prompt": "pink baby dinosaur", "idempotency_key": "same-hatch"}
 	first := requestJSON(t, handler, http.MethodPost, "/api/v1/hatches", body)
-	if first.Code != http.StatusCreated {
-		t.Fatalf("first status=%d body=%s", first.Code, first.Body.String())
-	}
-	firstResponse := decodeHatchResponse(t, first)
-
 	second := requestJSON(t, handler, http.MethodPost, "/api/v1/hatches", body)
-	if second.Code != http.StatusOK {
-		t.Fatalf("second status=%d body=%s", second.Code, second.Body.String())
+	if first.Code != http.StatusAccepted || second.Code != http.StatusAccepted {
+		t.Fatalf("statuses=%d,%d", first.Code, second.Code)
 	}
-	secondResponse := decodeHatchResponse(t, second)
-	if !secondResponse.Replayed {
-		t.Fatal("second hatch should be replayed")
+	firstResponse := decodeHatchSubmitResponse(t, first)
+	secondResponse := decodeHatchSubmitResponse(t, second)
+	if secondResponse.Job.JobID != firstResponse.Job.JobID || !secondResponse.Replayed {
+		t.Fatalf("idempotent replay mismatch: first=%#v second=%#v", firstResponse, secondResponse)
 	}
-	if secondResponse.Artifact.ID != firstResponse.Artifact.ID {
-		t.Fatalf("ids differ: %s != %s", secondResponse.Artifact.ID, firstResponse.Artifact.ID)
-	}
+	waitForHatchJob(t, handler, firstResponse.Job.StatusURL, hatchJobSucceeded)
 	if got := len(app.repo.Artifacts()); got != 1 {
 		t.Fatalf("artifact count=%d, want 1", got)
 	}
 }
 
-func TestCreateHatchMultipartAndDeleteCleansMedia(t *testing.T) {
+func TestCreateHatchMultipartPassesReferenceAndDeleteCleansMedia(t *testing.T) {
 	app, handler := newTestHandler(t)
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
-	if err := writer.WriteField("prompt", "绿色会跳舞的小恐龙"); err != nil {
-		t.Fatal(err)
-	}
-	if err := writer.WriteField("idempotency_key", "multipart-hatch"); err != nil {
-		t.Fatal(err)
-	}
+	_ = writer.WriteField("prompt", "green dancing baby dinosaur")
+	_ = writer.WriteField("idempotency_key", "multipart-hatch")
 	part, err := writer.CreateFormFile("image", "reference.png")
 	if err != nil {
 		t.Fatal(err)
 	}
-	png := []byte{0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d}
-	if _, err := part.Write(png); err != nil {
-		t.Fatal(err)
-	}
-	if err := writer.Close(); err != nil {
-		t.Fatal(err)
-	}
-
+	_, _ = part.Write([]byte{0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d})
+	_ = writer.Close()
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/hatches", &body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
-	if rec.Code != http.StatusCreated {
+	if rec.Code != http.StatusAccepted {
 		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
 	}
-	response := decodeHatchResponse(t, rec)
-	artifact := response.Artifact
-	if artifact.SourceFilePath == "" {
-		t.Fatal("source image was not persisted")
+	submit := decodeHatchSubmitResponse(t, rec)
+	job := waitForHatchJob(t, handler, submit.Job.StatusURL, hatchJobSucceeded)
+	artifact := job.Artifact
+	if artifact == nil || artifact.SourceFilePath == "" {
+		t.Fatalf("source image was not passed to artifact: %#v", artifact)
 	}
 	generatedPath := filepath.Join(app.repo.mediaDir, artifact.FilePath)
 	sourcePath := filepath.Join(app.repo.mediaDir, artifact.SourceFilePath)
@@ -163,7 +216,6 @@ func TestCreateHatchMultipartAndDeleteCleansMedia(t *testing.T) {
 			t.Fatalf("media missing %s: %v", path, err)
 		}
 	}
-
 	deleteReq := httptest.NewRequest(http.MethodDelete, "/api/v1/artifacts/"+artifact.ID, nil)
 	deleteRec := httptest.NewRecorder()
 	handler.ServeHTTP(deleteRec, deleteReq)

@@ -53,7 +53,8 @@ See `qa\README.md` for the full pixel QA evidence and pass criteria.
 
 The H5 and API are served from the same Go process. Core routes:
 
-- `POST /api/v1/hatches`: hatch from JSON (`prompt`, `idempotency_key`) or multipart form data with an optional `image`.
+- `POST /api/v1/hatches`: submit an asynchronous hatch job from JSON (`prompt`, `idempotency_key`) or multipart form data with an optional reference `image`; returns `202 Accepted`.
+- `GET /api/v1/hatches/{job_id}`: poll profile, image, persistence, success, or failure state and read the final artifact.
 - `GET /api/v1/artifacts`: list persisted works.
 - `DELETE /api/v1/artifacts/{id}`: delete a work and its owned media.
 - `POST /api/v1/play-sessions`, `/turns`, and `/finish`: run the bounded story flow.
@@ -76,7 +77,7 @@ Invoke-RestMethod `
   -Body $body
 ```
 
-Without provider configuration, hatch and story-finish requests create local SVG artifacts. Request retries with the same idempotency key return the existing hatch result.
+User-initiated hatching requires a configured text profile provider and raster image provider. It never reports a local SVG fallback as a successful hatch. Story-finish cards keep their existing demo fallback. Request retries with the same idempotency key return the existing hatch job.
 
 ## Optional Provider Configuration
 
@@ -88,13 +89,25 @@ To enable server-side media providers:
 $env:OPENAI_API_KEY="..."
 $env:OPENAI_BASE_URL="https://agentllm.linkyun.co/v1"
 $env:OPENAI_STORY_MODEL="mimo-v2.5-pro"
+$env:OPENAI_HATCH_MODEL="mimo-v2.5-pro"
+$env:OPENAI_HATCH_TIMEOUT_SECONDS="30"
 $env:OPENAI_STORY_TIMEOUT_SECONDS="30"
 $env:DINODOO_IMAGE_PROVIDER="openai"
+$env:DINODOO_IMAGE_SKILL="gpt_image"
 $env:OPENAI_TTS_MODEL="gpt-4o-mini-tts"
 $env:OPENAI_STT_MODEL="gpt-4o-transcribe"
-$env:OPENAI_IMAGE_MODEL="gpt-image-1"
+$env:OPENAI_IMAGE_MODEL="gpt-image-2"
+$env:OPENAI_IMAGE_SIZE="1024x1024"
+$env:OPENAI_IMAGE_QUALITY="high"
+$env:OPENAI_IMAGE_BACKGROUND="transparent"
+# Optional when image generation uses a different OpenAI-compatible gateway:
+$env:OPENAI_IMAGE_BASE_URL="https://api.openai.com/v1"
+$env:OPENAI_IMAGE_API_KEY="..."
+$env:DINODOO_HATCH_JOB_TIMEOUT_SECONDS="240"
 scripts\start-local.ps1
 ```
+
+The canonical LinkYun image skill name is `gpt_image`; the legacy spelling `image_gpt` is accepted as an alias. Hatching uses `gpt-image-2` by default and prepends the versioned DinoDoo character style contract `dinodoo-feature-animation-v2`. The backend also sends the three independent home-screen dinosaurs as visual-style references, so species and colors can vary while animated-film anatomy, expression, rendering, composition, and transparent-background treatment stay consistent. Set `DINODOO_HATCH_STYLE_REFERENCES` to a platform path-separated list to override the references, or `none` to disable them.
 
 Provider keys stay on the backend. The H5 app never stores provider credentials. `scripts/start-local.ps1` also loads an ignored `.env.local` file from the repository root for local-only provider configuration.
 
