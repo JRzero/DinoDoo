@@ -26,6 +26,48 @@ const state = {
 const $ = (id) => document.getElementById(id);
 const GE = "/assets/game-elements";
 const ACTIVE = `${GE}/runtime-current`;
+const OPTIMIZED = `${ACTIVE}/optimized`;
+const optimizedAssetNames = new Set([
+  "bgHomeV2",
+  "bgStory",
+  "bgHatch",
+  "bgWorks",
+  "bgParent",
+  "homeLogo",
+  "hatchLogo",
+  "homeV2DinoXiaobao",
+  "homeV2DinoAdai",
+  "homeV2DinoGulu",
+  "homeV2PedestalCenter",
+  "homeV2PedestalLeft",
+  "homeV2PedestalRight",
+  "homeV2BadgeOrange",
+  "homeV2BadgeCoral",
+  "homeV2BadgeTeal",
+  "hatchSubtitlePlaque",
+  "egg-source",
+  "hatchEggCracking",
+  "hatchEggSuccess",
+  "worksCabinetV2",
+  "worksCardFeaturedV2",
+  "navHatch",
+  "navWorks",
+  "navParent",
+]);
+const assetFallbackSources = new Map();
+const resolvedAssetSources = new Map();
+
+function versioned(src, version) {
+  return version ? `${src}?v=${version}` : src;
+}
+
+function asset(name, version = "") {
+  const fallback = versioned(`${ACTIVE}/${name}.png`, version);
+  if (!optimizedAssetNames.has(name)) return fallback;
+  const preferred = versioned(`${OPTIMIZED}/${name}.webp`, version);
+  assetFallbackSources.set(preferred, fallback);
+  return preferred;
+}
 
 const copy = {
   dinos: {
@@ -45,40 +87,40 @@ const copy = {
 };
 
 const assetSources = {
-  bgHomeV2: `${ACTIVE}/bgHomeV2.png`,
-  bgStory: `${ACTIVE}/bgStory.png`,
-  bgHatch: `${ACTIVE}/bgHatch.png`,
-  bgWorks: `${ACTIVE}/bgWorks.png`,
-  bgParent: `${ACTIVE}/bgParent.png`,
-  homeLogo: `${ACTIVE}/homeLogo.png`,
+  bgHomeV2: asset("bgHomeV2"),
+  bgStory: asset("bgStory"),
+  bgHatch: asset("bgHatch"),
+  bgWorks: asset("bgWorks"),
+  bgParent: asset("bgParent"),
+  homeLogo: asset("homeLogo"),
   homeMusic: `${ACTIVE}/homeMusic.png`,
   dinoXiaobao: `${ACTIVE}/dinoXiaobao.png`,
   dinoAdai: `${ACTIVE}/dinoAdai.png`,
   dinoGulu: `${ACTIVE}/dinoGulu.png`,
-  homeV2DinoXiaobao: `${ACTIVE}/homeV2DinoXiaobao.png`,
-  homeV2DinoAdai: `${ACTIVE}/homeV2DinoAdai.png`,
-  homeV2DinoGulu: `${ACTIVE}/homeV2DinoGulu.png`,
-  homeV2PedestalCenter: `${ACTIVE}/homeV2PedestalCenter.png`,
-  homeV2PedestalLeft: `${ACTIVE}/homeV2PedestalLeft.png`,
-  homeV2PedestalRight: `${ACTIVE}/homeV2PedestalRight.png`,
-  homeV2BadgeOrange: `${ACTIVE}/homeV2BadgeOrange.png`,
-  homeV2BadgeCoral: `${ACTIVE}/homeV2BadgeCoral.png`,
-  homeV2BadgeTeal: `${ACTIVE}/homeV2BadgeTeal.png`,
+  homeV2DinoXiaobao: asset("homeV2DinoXiaobao"),
+  homeV2DinoAdai: asset("homeV2DinoAdai"),
+  homeV2DinoGulu: asset("homeV2DinoGulu"),
+  homeV2PedestalCenter: asset("homeV2PedestalCenter"),
+  homeV2PedestalLeft: asset("homeV2PedestalLeft"),
+  homeV2PedestalRight: asset("homeV2PedestalRight"),
+  homeV2BadgeOrange: asset("homeV2BadgeOrange"),
+  homeV2BadgeCoral: asset("homeV2BadgeCoral"),
+  homeV2BadgeTeal: asset("homeV2BadgeTeal"),
   navBg: `${ACTIVE}/navBg.png`,
   navHome: `${ACTIVE}/navHomeV2.png?v=20260712-park-icon-v2`,
-  navWorks: `${ACTIVE}/navWorks.png`,
-  navHatch: `${ACTIVE}/navHatch.png`,
+  navWorks: asset("navWorks"),
+  navHatch: asset("navHatch"),
   storyTitle: `${ACTIVE}/storyTitle.png`,
   storyBubble: `${ACTIVE}/storyBubble.png`,
   storyVoice: `${ACTIVE}/storyVoice.png`,
   storyChoiceA: `${ACTIVE}/storyChoiceA.png`,
   storyChoiceB: `${ACTIVE}/storyChoiceB.png`,
-  hatchSubtitlePlaque: `${ACTIVE}/hatchSubtitlePlaque.png`,
-  hatchLogo: `${ACTIVE}/hatchLogo.png`,
+  hatchSubtitlePlaque: asset("hatchSubtitlePlaque"),
+  hatchLogo: asset("hatchLogo"),
   hatchMusic: `${ACTIVE}/hatchMusic.png`,
-  hatchEggIdle: `${ACTIVE}/egg-source.png`,
-  hatchEggCracking: `${ACTIVE}/hatchEggCracking.png?v=20260710-hatch-sequence`,
-  hatchEggSuccess: `${ACTIVE}/hatchEggSuccess.png?v=20260710-hatch-sequence`,
+  hatchEggIdle: asset("egg-source"),
+  hatchEggCracking: asset("hatchEggCracking", "20260710-hatch-sequence"),
+  hatchEggSuccess: asset("hatchEggSuccess", "20260710-hatch-sequence"),
   hatchControlPanel: `${ACTIVE}/hatchControlPanel.png`,
   hatchButtonVoice: `${ACTIVE}/hatchButtonVoice.png`,
   hatchButtonImage: `${ACTIVE}/hatchButtonImage.png`,
@@ -87,8 +129,8 @@ const assetSources = {
   hatchStatusRecording: `${ACTIVE}/hatchStatusRecording.png`,
   hatchStatusImageSelected: `${ACTIVE}/hatchStatusImageSelected.png`,
   hatchStatusSuccess: `${ACTIVE}/hatchStatusSuccess.png`,
-  worksCabinetV2: `${ACTIVE}/worksCabinetV2.png?v=20260712-works-v2`,
-  worksCardFeaturedV2: `${ACTIVE}/worksCardFeaturedV2.png?v=20260712-works-v2`,
+  worksCabinetV2: asset("worksCabinetV2", "20260712-works-v2"),
+  worksCardFeaturedV2: asset("worksCardFeaturedV2", "20260712-works-v2"),
   worksCardCompactV2: `${ACTIVE}/worksCardCompactV2.png?v=20260712-works-v2`,
   worksCarouselArrow: `${ACTIVE}/worksCarouselArrow.png?v=20260712-works-carousel-v1`,
   worksMetaPaw: `${ACTIVE}/worksMetaPaw.png`,
@@ -218,10 +260,43 @@ function applyRouteFromHash() {
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    const fallback = assetFallbackSources.get(src);
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load ${src}`));
+    img.onerror = () => {
+      if (!fallback) {
+        reject(new Error(`Failed to load ${src}`));
+        return;
+      }
+      const fallbackImg = new Image();
+      fallbackImg.onload = () => {
+        resolvedAssetSources.set(src, fallback);
+        resolve(fallbackImg);
+      };
+      fallbackImg.onerror = () => reject(new Error(`Failed to load ${src}`));
+      fallbackImg.src = fallback;
+    };
     img.src = src;
   });
+}
+
+function resolvedAssetSource(src) {
+  return resolvedAssetSources.get(src) || src;
+}
+
+function attachAssetFallback(el, src, key) {
+  const fallback = assetFallbackSources.get(src);
+  if (!fallback) return;
+  el.addEventListener(
+    "error",
+    () => {
+      if (el.dataset.fallbackApplied === "true") return;
+      el.dataset.fallbackApplied = "true";
+      resolvedAssetSources.set(src, fallback);
+      if (key) el.dataset.asset = key;
+      el.src = fallback;
+    },
+    { once: true }
+  );
 }
 
 async function loadAssetImages() {
@@ -245,7 +320,8 @@ function img(key, rect, options = {}) {
   const el = document.createElement("img");
   el.className = ["scene-art", options.className].filter(Boolean).join(" ");
   el.dataset.asset = key;
-  el.src = source;
+  el.src = resolvedAssetSource(source);
+  attachAssetFallback(el, source, key);
   el.alt = "";
   el.draggable = false;
   applySlot(el, rect);
@@ -281,7 +357,8 @@ function navImg(key, rect) {
   const el = document.createElement("img");
   el.className = "nav-art-img";
   el.dataset.asset = key;
-  el.src = source;
+  el.src = resolvedAssetSource(source);
+  attachAssetFallback(el, source, key);
   el.alt = "";
   el.draggable = false;
   applySlot(el, rect);
@@ -1213,12 +1290,25 @@ function bindEvents() {
     });
   });
   window.addEventListener("hashchange", applyRouteFromHash);
+  window.addEventListener("resize", syncViewportScale);
+  window.visualViewport?.addEventListener("resize", syncViewportScale);
+}
+
+function syncViewportScale() {
+  const viewport = window.visualViewport;
+  const width = viewport?.width || window.innerWidth || 390;
+  const height = viewport?.height || window.innerHeight || 844;
+  const scale = Math.min(width / 390, height / 844, 1);
+  document.documentElement.style.setProperty("--app-scale", String(Math.max(0.1, scale)));
+  document.documentElement.style.setProperty("--app-width", `${390 * scale}px`);
+  document.documentElement.style.setProperty("--app-height", `${844 * scale}px`);
 }
 
 async function init() {
   stage.scene = $("sceneLayer");
   stage.nav = $("navLayer");
   document.body.classList.add("home-mode", "asset-mode");
+  syncViewportScale();
   bindEvents();
   loadLocalHatched();
   await Promise.all([loadSession(), loadDinos(), loadSettings(), loadAssetImages()]);
