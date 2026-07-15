@@ -143,6 +143,9 @@ func TestOpenAIStoryGeneratorParsesJSONAndSendsBoundedContext(t *testing.T) {
 	if !strings.Contains(userMessage, "look-in-tree-hole") || !strings.Contains(userMessage, "seed-test-123") || strings.Count(userMessage, "recent-story-beat") != 6 {
 		t.Fatalf("context was not bounded or choice was omitted: %q", userMessage)
 	}
+	if !strings.Contains(userMessage, "Fixed protagonist rule") {
+		t.Fatalf("story prompt does not lock the protagonist: %q", userMessage)
+	}
 }
 
 func TestNormalizeGeneratedStoryAcceptsLongNarrativeAndCompleteAnswers(t *testing.T) {

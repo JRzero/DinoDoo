@@ -12,7 +12,7 @@ const state = {
   worksDeleteTimer: null,
   worksStatus: "",
   activeText: "",
-  storyChoices: ["走近一点看看发光的恐龙蛋", "请阿呆陪我们一起去森林深处", "先安静听听树叶后面的声音"],
+  storyChoices: ["走近一点看看发光的恐龙蛋", "一起去森林深处找线索", "先安静听听树叶后的声音"],
   storyLoading: false,
   route: "home",
   eggState: "idle",
@@ -21,12 +21,17 @@ const state = {
   hatchImageName: "",
   hatchImageFile: null,
   parentSaved: false,
+  keyboardOpen: false,
+  viewportBaseWidth: 0,
+  viewportBaseHeight: 0,
 };
 
 const $ = (id) => document.getElementById(id);
 const GE = "/assets/game-elements";
 const ACTIVE = `${GE}/runtime-current`;
 const OPTIMIZED = `${ACTIVE}/optimized`;
+const STAGE_WIDTH = 390;
+const STAGE_HEIGHT = 844;
 const optimizedAssetNames = new Set([
   "bgHomeV2",
   "bgStory",
@@ -388,8 +393,8 @@ function drawHomeScene() {
   img("bgHomeV2", { x: 0, y: 0, w: 390, h: 844 }, { className: "scene-bg" });
   img("homeLogo", { x: 50, y: 62, w: 290, h: 112 });
   img("homeMusic", { x: 334, y: 42, w: 52, h: 52 });
-  img("hatchSubtitlePlaque", { x: 72, y: 174, w: 246, h: 56 });
-  drawWrappedText(copy.intro, 195, 215, 218, 26, 1, {
+  img("hatchSubtitlePlaque", { x: 72, y: 179, w: 246, h: 56 });
+  drawWrappedText(copy.intro, 195, 220, 218, 26, 1, {
     className: "home-guide-plaque-text",
     font: "900 16px Arial, Microsoft YaHei, sans-serif",
     color: "#fff7e6",
@@ -643,12 +648,7 @@ async function startWorkAdventure() {
   setAction("works:adventure:" + item.id);
   routeTo("story");
   try {
-    const body = {
-      theme: "adventure",
-      dino: state.selectedDino,
-      dino_name: name,
-      dino_description: worksDisplayDescription(item),
-    };
+    const body = storySessionPayload();
     if (!item.offline) body.artifact_id = item.id;
     const session = await api.post("/api/v1/play-sessions", body);
     applyStorySession(session);
@@ -829,7 +829,38 @@ function drawWrappedText(text, x, y, maxWidth, lineHeight, maxLines, options = {
   stage.scene.appendChild(el);
 }
 
-const fallbackStoryChoices = ["走近一点看看发光的恐龙蛋", "请阿呆陪我们一起去森林深处", "先安静听听树叶后面的声音"];
+const fallbackStoryChoices = ["走近一点看看发光的恐龙蛋", "一起去森林深处找线索", "先安静听听树叶后的声音"];
+
+function currentStoryDinoName() {
+  return state.selectedStoryArtifact?.name || copy.dinos[state.selectedDino] || copy.dinos.xiaobao;
+}
+
+function currentStoryDinoDescription() {
+  return state.selectedStoryArtifact ? worksDisplayDescription(state.selectedStoryArtifact) : "";
+}
+
+function enforceCurrentStoryDinoText(text) {
+  let result = String(text || "");
+  const protagonist = currentStoryDinoName();
+  Object.values(copy.dinos).forEach((name) => {
+    if (name && name !== protagonist) result = result.split(name).join(protagonist);
+  });
+  return result;
+}
+
+function storySessionPayload(extra = {}) {
+  const body = {
+    theme: "adventure",
+    dino: state.selectedDino,
+    ...extra,
+  };
+  if (state.selectedStoryArtifact) {
+    body.dino_name = currentStoryDinoName();
+    const description = currentStoryDinoDescription();
+    if (description) body.dino_description = description;
+  }
+  return body;
+}
 
 function normalizeStoryChoices(choices) {
   const result = Array.isArray(choices)
@@ -839,16 +870,16 @@ function normalizeStoryChoices(choices) {
     if (result.length >= 3) break;
     if (!result.includes(fallback)) result.push(fallback);
   }
-  return result.slice(0, 3);
+  return result.slice(0, 3).map(enforceCurrentStoryDinoText);
 }
 
 function applyStorySession(session, turn = null) {
   state.session = session || state.session;
   const latestTurn = turn || session?.turns?.[session.turns.length - 1];
-  state.activeText = latestTurn?.text || state.activeText || copy.intro;
+  state.activeText = enforceCurrentStoryDinoText(latestTurn?.text || state.activeText || copy.intro);
   state.storyChoices = normalizeStoryChoices(latestTurn?.choices || session?.state?.choices);
   state.storyLoading = false;
-  if (latestTurn?.speaker) $("speakerName").textContent = latestTurn.speaker;
+  $("speakerName").textContent = currentStoryDinoName();
   $("dinoLine").textContent = state.activeText;
   drawStage();
 }
@@ -856,7 +887,7 @@ function applyStorySession(session, turn = null) {
 async function loadSession() {
   state.storyLoading = true;
   try {
-    const session = await api.post("/api/v1/play-sessions", { theme: "adventure", dino: state.selectedDino });
+    const session = await api.post("/api/v1/play-sessions", storySessionPayload());
     applyStorySession(session);
   } catch {
     state.session = { id: "local-session" };
@@ -983,7 +1014,8 @@ function renderArtifacts() {
 async function chooseDino(id) {
   state.selectedStoryArtifact = null;
   state.selectedDino = id;
-  $("speakerName").textContent = copy.dinos[id] || copy.dinos.xiaobao;
+  state.session = null;
+  $("speakerName").textContent = currentStoryDinoName();
   state.activeText = copy.intro;
   state.storyChoices = normalizeStoryChoices();
   state.storyLoading = true;
@@ -991,7 +1023,7 @@ async function chooseDino(id) {
   setAction("home:dino:" + id);
   routeTo("story");
   try {
-    const session = await api.post("/api/v1/play-sessions", { theme: "adventure", dino: id });
+    const session = await api.post("/api/v1/play-sessions", storySessionPayload({ dino: id }));
     applyStorySession(session);
     setAction("story:session:" + id);
   } catch {
@@ -1036,9 +1068,9 @@ async function submitStoryInput(text, action, source = "choice") {
   const localLines = [copy.storyA, copy.storyB, "小恐龙发现了三颗亮晶晶的脚印。"];
   const index = Math.max(0, state.storyChoices.indexOf(input));
   state.storyChoices = normalizeStoryChoices([
-    ["走彩虹桥", "去小河边", "问问阿呆"][index % 3],
+    ["走彩虹桥", "去小河边", "找新线索"][index % 3],
     ["找亮亮星", "数一数", "唱一首歌"][index % 3],
-    ["轻轻敲门", "叫咕噜", "看小脚印"][index % 3],
+    ["轻轻敲门", "听听声音", "看小脚印"][index % 3],
   ]);
   updateStoryLine(localLines[index % localLines.length], action);
 }
@@ -1289,19 +1321,59 @@ function bindEvents() {
       drawStage();
     });
   });
+  document.addEventListener("focusin", (event) => { if (event.target?.id === "hatchPrompt") lockKeyboardViewport(); });
+  document.addEventListener("focusout", (event) => { if (event.target?.id === "hatchPrompt") releaseKeyboardViewport(); });
   window.addEventListener("hashchange", applyRouteFromHash);
   window.addEventListener("resize", syncViewportScale);
   window.visualViewport?.addEventListener("resize", syncViewportScale);
 }
 
+function lockKeyboardViewport() {
+  state.keyboardOpen = true;
+  document.body.dataset.keyboard = "open";
+  syncViewportScale();
+  keepViewportPinned();
+  window.setTimeout(keepViewportPinned, 120);
+  window.setTimeout(keepViewportPinned, 320);
+}
+
+function releaseKeyboardViewport() {
+  state.keyboardOpen = false;
+  delete document.body.dataset.keyboard;
+  window.setTimeout(syncViewportScale, 180);
+  window.setTimeout(keepViewportPinned, 0);
+}
+
+function keepViewportPinned() {
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
+
 function syncViewportScale() {
   const viewport = window.visualViewport;
-  const width = viewport?.width || window.innerWidth || 390;
-  const height = viewport?.height || window.innerHeight || 844;
-  const scale = Math.min(width / 390, height / 844, 1);
-  document.documentElement.style.setProperty("--app-scale", String(Math.max(0.1, scale)));
-  document.documentElement.style.setProperty("--app-width", `${390 * scale}px`);
-  document.documentElement.style.setProperty("--app-height", `${844 * scale}px`);
+  const width = viewport?.width || window.innerWidth || STAGE_WIDTH;
+  const viewportHeight = viewport?.height || window.innerHeight || STAGE_HEIGHT;
+  const layoutHeight = window.innerHeight || viewportHeight;
+  const promptFocused = document.activeElement === $("hatchPrompt");
+  const keyboardLocked = state.keyboardOpen || promptFocused;
+  if (promptFocused) {
+    state.keyboardOpen = true;
+    document.body.dataset.keyboard = "open";
+  }
+  if (!keyboardLocked) {
+    state.viewportBaseWidth = width;
+    state.viewportBaseHeight = Math.max(viewportHeight, layoutHeight);
+  }
+  const height = keyboardLocked
+    ? state.viewportBaseHeight || layoutHeight || viewportHeight
+    : viewportHeight;
+  const scale = Math.min(width / STAGE_WIDTH, height / STAGE_HEIGHT);
+  const safeScale = Math.max(0.1, scale);
+  document.documentElement.style.setProperty("--app-scale", String(safeScale));
+  document.documentElement.style.setProperty("--app-width", `${STAGE_WIDTH * safeScale}px`);
+  document.documentElement.style.setProperty("--app-height", `${STAGE_HEIGHT * safeScale}px`);
+  keepViewportPinned();
 }
 
 async function init() {

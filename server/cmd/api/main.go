@@ -465,7 +465,7 @@ func (e StoryEngine) start(ctx context.Context, themeCode string, dino DinoProfi
 		CustomDino:            custom,
 		TurnIndex:             0,
 		Mood:                  "curious",
-		Choices:               []string{"走近一点看看发光的恐龙蛋", "请阿呆陪我们一起去森林深处", "先安静听听树叶后面的声音"},
+		Choices:               []string{"走近一点看看发光的恐龙蛋", "一起去森林深处找线索", "先安静听听树叶后的声音"},
 		CardSeed: CardSeed{
 			Dino:   dino.Species,
 			Color:  "蓝色",
@@ -480,12 +480,15 @@ func (e StoryEngine) start(ctx context.Context, themeCode string, dino DinoProfi
 		State:     state,
 		StartedAt: time.Now().Format(time.RFC3339),
 	}
+	state.Choices = enforceStoryChoices(state.Choices, dino.Name)
+	session.State.Choices = state.Choices
 	text := fmt.Sprintf("%s的树叶忽然闪起金色小光点，草丛里传来轻轻的叮咚声，一颗发光的恐龙蛋正在等朋友。我们先做什么呢？", t.Scene)
 	expression := "happy"
 	if e.generator != nil {
 		generated, err := e.generator.Generate(ctx, StoryGenerationRequest{Initial: true, Dino: dino, Theme: t, State: state, CreativeSeed: newStoryCreativeSeed()})
 		if err == nil {
 			if normalized, normalizeErr := normalizeGeneratedStory(generated, e.guard); normalizeErr == nil {
+				normalized = enforceStoryProtagonist(normalized, dino.Name)
 				text = normalized.Text
 				state.Choices = normalized.Choices
 				session.State.Choices = normalized.Choices
@@ -497,6 +500,7 @@ func (e StoryEngine) start(ctx context.Context, themeCode string, dino DinoProfi
 			log.Printf("story provider fallback: %v", err)
 		}
 	}
+	text = enforceStoryTextProtagonist(text, dino.Name)
 	text, flags := e.guard.SafeOutput(text)
 	session.Turns = append(session.Turns, StoryTurn{
 		ID:          newID("turn"),
@@ -550,11 +554,12 @@ func storyDinoFromState(state StoryState) DinoProfile {
 func (e StoryEngine) Next(ctx context.Context, session *PlaySession, input string) StoryTurn {
 	flags := e.guard.CheckInput(input)
 	if len(flags) > 0 {
+		safeDino := storyDinoFromState(session.State)
 		session.State.Choices = []string{"找爸爸妈妈", "轻轻抱抱", "回到首页"}
 		return StoryTurn{
 			ID:          newID("turn"),
 			SessionID:   session.ID,
-			Speaker:     "阿呆",
+			Speaker:     safeDino.Name,
 			Role:        "assistant",
 			Text:        "我们先停一下，找爸爸妈妈一起看。",
 			Expression:  "gentle",
@@ -565,25 +570,20 @@ func (e StoryEngine) Next(ctx context.Context, session *PlaySession, input strin
 	}
 
 	session.State.TurnIndex++
-	var nextDino DinoProfile
-	if session.State.CustomDino {
-		nextDino = storyDinoFromState(session.State)
-	} else {
-		nextDino = dinos()[session.State.TurnIndex%len(dinos())]
-		session.State.ActiveDino = nextDino.Code
-		session.State.ActiveDinoName = nextDino.Name
-		session.State.ActiveDinoSpecies = nextDino.Species
-		session.State.ActiveDinoPersonality = nextDino.Personality
-	}
+	nextDino := storyDinoFromState(session.State)
+	session.State.ActiveDino = nextDino.Code
+	session.State.ActiveDinoName = nextDino.Name
+	session.State.ActiveDinoSpecies = nextDino.Species
+	session.State.ActiveDinoPersonality = nextDino.Personality
 	session.State.CardSeed.Dino = nextDino.Species
 	session.State.CardSeed.Action = pick([]string{"挥挥小手", "抱着草莓", "数星星", "戴着小帽子"}, session.State.TurnIndex)
 	session.State.CardSeed.Object = pick([]string{"彩虹蛋", "草莓篮子", "亮亮星", "月亮毯子"}, session.State.TurnIndex)
 	session.State.CardSeed.Color = pick([]string{"蓝色", "黄色", "绿色", "粉色"}, session.State.TurnIndex)
 
 	choiceA := pick([]string{"沿着彩虹桥寻找发光的脚印", "抬头找一找藏在树梢的亮星", "轻轻敲门问问树洞里的朋友", "把刚刚找到的小花送给新朋友"}, session.State.TurnIndex)
-	choiceB := pick([]string{"去小河边看看是谁在唱歌", "一起数一数路边的彩色石头", "请咕噜帮忙看看远处的山谷", "给怕冷的恐龙蛋盖上小毯子"}, session.State.TurnIndex+1)
-	choiceC := pick([]string{"问问阿呆有没有发现新线索", "唱一首轻轻的歌给森林听", "仔细看看草地上的小脚印", "轻轻抱一抱发光的恐龙蛋"}, session.State.TurnIndex+2)
-	session.State.Choices = []string{choiceA, choiceB, choiceC}
+	choiceB := pick([]string{"去小河边看看是谁在唱歌", "一起数一数路边的彩色石头", "看看远处的山谷", "给怕冷的恐龙蛋盖上小毯子"}, session.State.TurnIndex+1)
+	choiceC := pick([]string{"找找有没有新线索", "唱一首轻轻的歌给森林听", "仔细看看草地上的小脚印", "轻轻抱一抱发光的恐龙蛋"}, session.State.TurnIndex+2)
+	session.State.Choices = enforceStoryChoices([]string{choiceA, choiceB, choiceC}, nextDino.Name)
 
 	line := storyLine(nextDino.Name, input, session.State)
 	expression := pick([]string{"happy", "curious", "gentle", "sleepy"}, session.State.TurnIndex)
@@ -598,6 +598,7 @@ func (e StoryEngine) Next(ctx context.Context, session *PlaySession, input strin
 		})
 		if err == nil {
 			if normalized, normalizeErr := normalizeGeneratedStory(generated, e.guard); normalizeErr == nil {
+				normalized = enforceStoryProtagonist(normalized, nextDino.Name)
 				line = normalized.Text
 				session.State.Choices = normalized.Choices
 				expression = normalized.Expression
@@ -608,6 +609,8 @@ func (e StoryEngine) Next(ctx context.Context, session *PlaySession, input strin
 			log.Printf("story provider fallback: %v", err)
 		}
 	}
+	line = enforceStoryTextProtagonist(line, nextDino.Name)
+	session.State.Choices = enforceStoryChoices(session.State.Choices, nextDino.Name)
 	line, outFlags := e.guard.SafeOutput(line)
 	return StoryTurn{
 		ID:          newID("turn"),
@@ -620,6 +623,33 @@ func (e StoryEngine) Next(ctx context.Context, session *PlaySession, input strin
 		SafetyFlags: outFlags,
 		CreatedAt:   time.Now().Format(time.RFC3339),
 	}
+}
+
+func enforceStoryProtagonist(turn GeneratedStoryTurn, protagonist string) GeneratedStoryTurn {
+	turn.Text = enforceStoryTextProtagonist(turn.Text, protagonist)
+	turn.Choices = enforceStoryChoices(turn.Choices, protagonist)
+	return turn
+}
+
+func enforceStoryChoices(choices []string, protagonist string) []string {
+	locked := make([]string, 0, len(choices))
+	for _, choice := range choices {
+		locked = append(locked, enforceStoryTextProtagonist(choice, protagonist))
+	}
+	return locked
+}
+
+func enforceStoryTextProtagonist(text string, protagonist string) string {
+	protagonist = strings.TrimSpace(protagonist)
+	if protagonist == "" {
+		return text
+	}
+	for _, dino := range dinos() {
+		if dino.Name != "" && dino.Name != protagonist {
+			text = strings.ReplaceAll(text, dino.Name, protagonist)
+		}
+	}
+	return text
 }
 
 func storyLine(speaker, input string, state StoryState) string {

@@ -147,8 +147,8 @@ func buildStoryPrompt(input StoryGenerationRequest) string {
 	if creativeSeed == "" {
 		creativeSeed = newStoryCreativeSeed()
 	}
-	return fmt.Sprintf("Creative seed: %s\nVariation rule: use the seed to invent a fresh child-safe event, place, clue, and wording. Do not repeat the recent plot or choices.\nPhase: %s\nMain character: %s, %s, %s\nScene: %s\nGoal: %s\nCurrent choice: %s\nRecent plot:\n%s",
-		creativeSeed, phase, input.Dino.Name, input.Dino.Species, input.Dino.Personality,
+	return fmt.Sprintf("Creative seed: %s\nVariation rule: use the seed to invent a fresh child-safe event, place, clue, and wording. Do not repeat the recent plot or choices.\nPhase: %s\nMain character: %s, %s, %s\nFixed protagonist rule: the story protagonist must stay as this main character in every turn. Do not replace the protagonist with another dinosaur or child. 中文硬性规则：故事正文和三个选项的行动主角必须始终是“%s”，不要写成小暴、阿呆、咕噜或其他恐龙，除非它就是当前主角。\nScene: %s\nGoal: %s\nCurrent choice: %s\nRecent plot:\n%s",
+		creativeSeed, phase, input.Dino.Name, input.Dino.Species, input.Dino.Personality, input.Dino.Name,
 		input.State.Scene, input.State.Goal, truncateRunes(strings.TrimSpace(input.Input), 20), strings.Join(lines, "\n"))
 }
 

@@ -267,6 +267,24 @@ func TestCreateHatchRejectsLongPrompt(t *testing.T) {
 	}
 }
 
+func TestEnforceStoryProtagonistRewritesOtherDinoNames(t *testing.T) {
+	turn := enforceStoryProtagonist(GeneratedStoryTurn{
+		Text: "阿呆轻轻捡起石头，咕噜在旁边点头。",
+		Choices: []string{
+			"问问阿呆发现了什么",
+			"请咕噜看看远处",
+			"和小暴继续向前走",
+		},
+	}, "小暴")
+	combined := turn.Text + strings.Join(turn.Choices, "")
+	if strings.Contains(combined, "阿呆") || strings.Contains(combined, "咕噜") {
+		t.Fatalf("other dino names were not rewritten: %#v", turn)
+	}
+	if !strings.Contains(combined, "小暴") {
+		t.Fatalf("protagonist name missing after rewrite: %#v", turn)
+	}
+}
+
 func TestStorySettingsAndMediaFallbackAPIs(t *testing.T) {
 	app, handler := newTestHandler(t)
 
@@ -312,6 +330,12 @@ func TestStorySettingsAndMediaFallbackAPIs(t *testing.T) {
 	}
 	if turnResponse.Session == nil || turnResponse.Turn == nil || len(turnResponse.Session.State.Choices) != 3 || len(turnResponse.Turn.Choices) != 3 {
 		t.Fatalf("next turn choices must contain three items: %#v", turnResponse)
+	}
+	if turnResponse.Turn.Speaker != session.Turns[0].Speaker {
+		t.Fatalf("story protagonist changed: first=%q next=%q", session.Turns[0].Speaker, turnResponse.Turn.Speaker)
+	}
+	if turnResponse.Session.State.ActiveDino != session.State.ActiveDino {
+		t.Fatalf("active dino changed: first=%q next=%q", session.State.ActiveDino, turnResponse.Session.State.ActiveDino)
 	}
 
 	finishRec := requestJSON(t, handler, http.MethodPost, "/api/v1/play-sessions/"+session.ID+"/finish", map[string]string{})

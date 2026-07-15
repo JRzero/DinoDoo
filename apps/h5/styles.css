@@ -5,6 +5,7 @@
   --app-scale: 1;
   --app-width: 390px;
   --app-height: 844px;
+  --route-bg: url("/assets/game-elements/runtime-current/optimized/bgHomeV2.webp");
 }
 
 * {
@@ -13,12 +14,19 @@
 
 html,
 body {
+  position: fixed;
+  inset: 0;
   width: 100%;
   height: 100%;
   min-height: 100%;
   margin: 0;
   overflow: hidden;
-  background: #b9efff;
+  overscroll-behavior: none;
+  background-color: #b9efff;
+  background-image: var(--route-bg);
+  background-position: center top;
+  background-size: cover;
+  background-repeat: no-repeat;
   font-family: Arial, "Microsoft YaHei", sans-serif;
   color: var(--ink);
 }
@@ -41,13 +49,32 @@ button {
   height: 100dvh;
   margin: 0 auto;
   overflow: hidden;
-  background: #b9efff;
+  background: transparent;
 }
+
+.shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: var(--route-bg) center top / cover no-repeat;
+  filter: blur(10px) saturate(1.08);
+  transform: scale(1.06);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+body[data-route="home"] { --route-bg: url("/assets/game-elements/runtime-current/optimized/bgHomeV2.webp"); }
+body[data-route="story"] { --route-bg: url("/assets/game-elements/runtime-current/optimized/bgStory.webp"); }
+body[data-route="hatch"] { --route-bg: url("/assets/game-elements/runtime-current/optimized/bgHatch.webp"); }
+body[data-route="works"] { --route-bg: url("/assets/game-elements/runtime-current/optimized/bgWorks.webp"); }
+body[data-route="parent"] { --route-bg: url("/assets/game-elements/runtime-current/optimized/bgParent.webp"); }
 
 .play {
   position: absolute;
   left: calc((100vw - var(--app-width)) / 2);
   top: 0;
+  z-index: 1;
   width: 390px;
   height: 844px;
   overflow: hidden;
